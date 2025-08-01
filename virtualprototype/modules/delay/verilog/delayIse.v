@@ -35,6 +35,7 @@ module delayIse #( parameter referenceClockFrequencyInHz = 12000000,
    *
    */
   wire isMyCi = (ciN == customInstructionId) ? ciStart & ciCke : 1'b0;
+  reg s_doneReg;
 
   /*
    *
@@ -88,7 +89,6 @@ module delayIse #( parameter referenceClockFrequencyInHz = 12000000,
    * Here we define the done signal
    *
    */
-  reg s_doneReg;
   wire s_doneNext = ((isMyCi == 1'b1 && ciValueA == 32'd0) ||
                      (isMyCi == 1'b1 && ciValueB[0] == 1'b1) ||
                      (s_microSecTick == 1'b1 && s_delayCountOne == 1'b1 && s_supressDoneReg == 1'b0)) ? 1'b1 : 1'b0;

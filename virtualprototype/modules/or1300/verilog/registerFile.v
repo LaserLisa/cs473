@@ -5,9 +5,9 @@
  * otherwise (default) there is only 1 set of 32 Registers and the cid is "0000".
  *
  */
- `ifdef GECKO5Education
- `define CIDEnabled
- `endif
+ //`ifdef GECKO5Education
+ //`define CIDEnabled
+ //`endif
 
 module registerFile #( parameter [2:0] processorId = 1,
                       parameter [2:0] NumberOfProcessors = 1,
@@ -115,6 +115,7 @@ module registerFile #( parameter [2:0] processorId = 1,
                       input wire [15:0]  cacheConfiguration,
                       input wire [5:0]   memoryDistanceIn,
                       output wire [5:0]  memoryDistanceOut,
+                      output wire [1:0]  sdramDelay,
                       output reg [31:0]  dataOutReg, // replaces status_out and jump_address_out
                       output reg [2:0]   selectOutReg, // replaces jump_address_index
                       output wire        weStatusOut,
@@ -506,10 +507,13 @@ module registerFile #( parameter [2:0] processorId = 1,
   reg [31:0] s_jumpAddressReg;
   reg [15:0] s_cacheConfigurationReg;
   reg [5:0] s_memoryDistanceInReg, s_memoryDistanceOutReg;
+  reg [1:0] s_sdramDelayReg;
   wire s_myBarrierNext = (reset == 1'b1) ? 1'b0 :
                          (writeSpr == 1'b1 && writeSprIndex == 15'h5002) ? writeData[0] : s_myBarrierReg;
   wire [5:0] s_memoryDistanceOutNext = (reset == 1'b1) ? 6'd0 :
                                        (writeSpr == 1'b1 && writeSprIndex == 16'hD800) ? writeData[5:0] : s_memoryDistanceOutReg;
+  wire [1:0] s_sdramDelayNext = (reset == 1'b1) ? 2'd0 :
+                                (writeSpr == 1'b1 && writeSprIndex == 16'hD801) ? writeData[1:0] : s_sdramDelayReg;
   wire s_weStatusNext = (writeSpr == 1'b1 && writeSprIndex == 15'h5004) ? 1'b1 : 1'b0;
   wire s_weJumpAddressNext = (writeSpr == 1'b1 && writeSprIndex[15:5] == {8'h50, 3'd0}) ? 1'b1 : 1'b0;
   wire s_weCacheConfigNext = (writeSpr == 1'b1 && writeSprIndex[15:3] == {12'h501, 1'd0}) ? 1'b1 : 1'b0;
@@ -521,9 +525,11 @@ module registerFile #( parameter [2:0] processorId = 1,
   assign weCacheConfig     = s_weCacheConfigReg;
   assign weStackTop        = s_weStackTopReg;
   assign myBarrierValue    = s_myBarrierReg;
+  assign sdramDelay        = s_sdramDelayReg;
 
   always @(posedge clock)
     begin
+      s_sdramDelayReg         <= s_sdramDelayNext;
       s_myBarrierReg          <= s_myBarrierNext;
       s_cpuEnabledReg         <= cpuEnabled;
       s_barrierValuesReg      <= barrierValues;

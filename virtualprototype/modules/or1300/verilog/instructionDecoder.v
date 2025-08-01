@@ -73,6 +73,8 @@ module instructionDecoder ( input wire         clock,
                             output wire [15:0] exeSprOrMask,
                                                exeImediateValue,
                             input wire         fastFlag,
+                            output wire        exeProtectRegA,
+                                               exeProtectRegB,
                             
                             // here the profiling interface is defined
                             output wire        branchPenalty);
@@ -262,6 +264,7 @@ module instructionDecoder ( input wire         clock,
   reg [2:0] s_exeControlReg, s_resultSelectionReg, s_storeReg, s_loadReg;
   reg [3:0] s_compareCntrlReg;
   reg [8:0] s_destinationReg;
+  reg s_protectRegAReg, s_protectRegBReg;
   reg s_weDestinationReg, s_validInstructionReg, s_activeInstructionReg, s_CustomReg;
   reg s_InstructionAbortReg, s_isRfeReg, s_systemCallReg, s_trapReg, s_divideReg;
   reg s_multiplyReg, s_updateCarryReg, s_updateOverflowReg, s_updateFlagReg, s_isDelaySlotIsnReg;
@@ -284,7 +287,7 @@ module instructionDecoder ( input wire         clock,
   wire [4:0] s_storeAddrNext = (stall == 1'b1) ? s_storeAddrReg :
                                (s_store != 3'b0) ? ir[15:11] : 5'b0;
   wire [4:0] s_operantAAddrNext = (stall == 1'b1) ? s_operantAAddrReg :
-                                  (s_isJump == 1'b1) ? 5'b0 : s_operantAAddr;
+                                  (s_usePc == 1'b1) ? 5'b0 : s_operantAAddr;
   wire [4:0] s_operantBAddrNext = (stall == 1'b1) ? s_operantBAddrReg :
                                   (s_useImediate == 1'b1) ? 5'b0 : ir[15:11];
   wire [8:0] s_destinationNext = (stall == 1'b1) ? s_destinationReg : {cid, s_destination};
@@ -361,9 +364,13 @@ module instructionDecoder ( input wire         clock,
   assign exeCompareCntrl      = s_compareCntrlReg;
   assign ebuIsDelaySlotIsn    = s_isDelaySlotIsnReg;
   assign exeIr                = s_irReg;
+  assign exeProtectRegA       = s_protectRegAReg;
+  assign exeProtectRegB       = s_protectRegBReg;
   
   always @(posedge clock)
     begin
+      s_protectRegAReg        <= (stall == 1'b1) ? s_protectRegAReg : s_usePc;
+      s_protectRegBReg        <= (stall == 1'b1) ? s_protectRegBReg : s_useImediate;
       s_exeOperantAReg        <= s_exeOperantANext;
       s_exeOperantBReg        <= s_exeOperantBNext;
       s_instructionAddressReg <= s_instructionAddressNext;

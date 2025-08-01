@@ -140,11 +140,11 @@ module memoryStage ( input wire         clock,
   wire s_spmWriteAccess      = (memoryStore == NO_STORE|| memoryStore == COMPARE_AND_SWAP || memoryStore == SWAP) ? 1'b0 : s_spmAddressed;
   wire s_uncachedReadAccess  = (memoryLoad == NO_LOAD || s_spmAddressed == 1'b1) ? 1'b0 : 
                                (s_memoryAddressReg[30] == 1'b1 || enableCache == 1'b0) ? 1'b1 : 1'b0;
-  wire s_uncachedWriteAccess = (memoryStore == NO_STORE || memoryStore [2] = 1'b1 || s_spmAddressed == 1'b1) ? 1'b0 :
+  wire s_uncachedWriteAccess = (memoryStore == NO_STORE || memoryStore [2] == 1'b1 || s_spmAddressed == 1'b1) ? 1'b0 :
                                (s_memoryAddressReg[30] == 1'b1 || enableCache == 1'b0) ? 1'b1 : 1'b0;
   wire s_cachedReadAccess    = (memoryLoad == NO_LOAD || s_spmAddressed == 1'b1) ? 1'b0 : 
                                (s_memoryAddressReg[30] == 1'b0) ? enableCache : 1'b0;
-  wire s_cachedWriteAccess   = (memoryStore == NO_STORE || memoryStore [2] = 1'b1 || s_spmAddressed == 1'b1) ? 1'b0 :
+  wire s_cachedWriteAccess   = (memoryStore == NO_STORE || memoryStore [2] == 1'b1 || s_spmAddressed == 1'b1) ? 1'b0 :
                                (s_memoryAddressReg[30] == 1'b0) ? enableCache : 1'b0;
   
   /*
@@ -166,7 +166,7 @@ module memoryStage ( input wire         clock,
    * Here some control signals are defined
    *
    */
-  wire s_dataDependencyStall = (memoryLoad == NO_LOAD && loadTarget[8:5] == cid && (loadTarget[4:0] == rfOperantAAddress || loadTarget[4:0] == rfOperantBAddress) ? 1'b1 : 1'b0;
+  wire s_dataDependencyStall = (memoryLoad == NO_LOAD && loadTarget[8:5] == cid && (loadTarget[4:0] == rfOperantAAddress || loadTarget[4:0] == rfOperantBAddress)) ? 1'b1 : 1'b0;
   
   
 endmodule

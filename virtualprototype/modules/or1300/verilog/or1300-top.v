@@ -42,6 +42,7 @@ module or1300Top #( parameter [2:0] processorId = 1,
                     input wire [31:0]  jumpAddressIn,
                                        stackTopPointer,
                     input wire [15:0]  cacheConfiguration,
+                    output wire [1:0]  sdramDelay,
                     input wire [5:0]   memoryDistanceIn,
                     output wire [5:0]  memoryDistanceOut,
                     output wire [31:0] dataOutReg, // replaces status_out and jump_address_out
@@ -169,7 +170,7 @@ module or1300Top #( parameter [2:0] processorId = 1,
   wire [2:0] s_exeExeControl, s_exeResultSelection, s_exeStore, s_exeLoad, s_IdIsStore;
   wire [3:0] s_exeCompareCntrl;
   wire [15:0] s_exeSprOrMask, s_exeImediateValue;
-  wire s_branchPenalty, s_idUseImmediate, s_executingBranch;
+  wire s_branchPenalty, s_idUseImmediate, s_executingBranch, s_exeProtectA, s_exeProtectB;
   
   instructionDecoder decoder ( .clock(clock),
                                .reset(reset),
@@ -232,7 +233,9 @@ module or1300Top #( parameter [2:0] processorId = 1,
                                .exeSprOrMask(s_exeSprOrMask),
                                .exeImediateValue(s_exeImediateValue),
                                .fastFlag(s_exeFastFlag),
-                               .branchPenalty(s_branchPenalty));
+                               .branchPenalty(s_branchPenalty),
+                               .exeProtectRegA(s_exeProtectA),
+                               .exeProtectRegB(s_exeProtectB));
 
   /*
    *
@@ -363,7 +366,9 @@ module or1300Top #( parameter [2:0] processorId = 1,
                           .overflowOut(s_exeOverflowOut),
                           .weOverflow(s_exeWeOverflow),
                           .flagOut(s_exeFlagOut),
-                          .weFlag(s_exeWeFlag) );
+                          .weFlag(s_exeWeFlag),
+                          .exeProtectRegA(s_exeProtectA),
+                          .exeProtectRegB(s_exeProtectB) );
 
   /*
    *
@@ -549,6 +554,7 @@ module or1300Top #( parameter [2:0] processorId = 1,
                    .exceptionPcRegister(s_exceptionPcRegister),
                    .cpuEnabled(cpuEnabled), // was do_jump
                    .softBios(softBios),
+                   .sdramDelay(sdramDelay),
                    .myBarrierValue(myBarrierValue),
                    .barrierValues(barrierValues),
                    .jumpAddressIn(jumpAddressIn),
@@ -585,8 +591,6 @@ module or1300Top #( parameter [2:0] processorId = 1,
                         .rfUseForwardedStoreData(s_idecUseForwardedStoreData),
                         .idOperantAAddr(s_idecLookupOperantAAddr[4:0]),
                         .idOperantBAddr(s_idecLookupOperantBAddr[4:0]),
-                        .idUseImmediate(s_idUseImmediate),
-                        .idIsJump(s_idecJump),
                         .idStore(s_IdIsStore),
                         .writeAddress(s_exeWriteAddress),
                         .writeEnable(s_exeWriteEnable),

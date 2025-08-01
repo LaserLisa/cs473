@@ -47,6 +47,8 @@ module executionUnit ( input wire         clock,
                                           load,
                        input wire [31:0]  supervisionRegister,
                        output wire        fastFlag,
+                       input wire         exeProtectRegA,
+                                          exeProtectRegB,
                        output wire [31:0] multMacLo,
                                           multMacHi,
                        
@@ -134,8 +136,8 @@ module executionUnit ( input wire         clock,
   localparam [2:0] COMPARE_AND_SWAP             = 3'b100;
   localparam [2:0] SWAP                         = 3'b101;
                         
-  wire [31:0] s_operantA = (useForwardedOpA == 1'b1) ? forwardedOperantA : operantA;
-  wire [31:0] s_operantB = (useForwardedOpB == 1'b1) ? forwardedOperantB : operantB;
+  wire [31:0] s_operantA = (useForwardedOpA == 1'b0 || exeProtectRegA == 1'b1) ? operantA : forwardedOperantA;
+  wire [31:0] s_operantB = (useForwardedOpB == 1'b0 || exeProtectRegB == 1'b1) ? operantB : forwardedOperantB;
   wire [31:0] s_adderResult;
   
   /* 

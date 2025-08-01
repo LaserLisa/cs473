@@ -39,7 +39,7 @@ module spm4k #(parameter [31:0] slaveBaseAddress = 0,
   wire [31:0] s_lookupData, s_dataToCore, s_writeData;
   reg [31:0] s_dataFromSpmReg;
   wire s_weData = spmCs & spmWe;
-  wire [9:0] s_lookupAddress = (spmCs == 1'b1) ? spmAddress[9:0] : s_dmaAddress[11:2];
+  wire [9:0] s_lookupAddress = (s_weData == 1'b1) ? spmAddress[9:0] : s_dmaAddress[11:2];
   wire s_clockNot = ~clock;
   
   assign dataFromSpm = s_dataFromSpmReg;
@@ -75,9 +75,9 @@ module spm4k #(parameter [31:0] slaveBaseAddress = 0,
       s_dataFromSpmReg <= (reset == 1'b1) ? 32'd0 : (s_CsReg == 1'b1) ? s_dataToCore : s_dataFromSpmReg;
     end
   
-  always @(posedge clock) s_lookupDataReg  <= (spmCs == 1'b0) ? s_lookupData : s_lookupDataReg;
+  always @(posedge clock) s_lookupDataReg  <= (s_weData == 1'b0) ? s_lookupData : s_lookupDataReg;
 
-  wire [31:0] s_dmaLookupData = (spmCs == 1'b1) ? s_lookupDataReg : s_lookupData;
+  wire [31:0] s_dmaLookupData = (s_weData == 1'b1) ? s_lookupDataReg : s_lookupData;
    
 
   spmDma #(.slaveBaseAddress(slaveBaseAddress),
@@ -86,7 +86,7 @@ module spm4k #(parameter [31:0] slaveBaseAddress = 0,
           (.clock(clock),
            .reset(reset),
            .irq(irq),
-           .spmBusy(spmCs),
+           .spmBusy(s_weData),
            .spmAddress(s_dmaAddress),
            .spmWe(s_dmaWe),
            .spmWeData(s_dmaDataOut),

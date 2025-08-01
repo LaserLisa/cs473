@@ -101,6 +101,7 @@ module or1300DualCore ( input wire         clock12MHz,
 `ifdef GECKO5Education
   wire s_resetPll = ~nReset;
   wire s_feedbackClock;
+  localparam CLOCKFREQUENCY = 59400000;
 
   EHXPLLL #(
         .PLLRST_ENA("ENABLED"),
@@ -151,7 +152,8 @@ module or1300DualCore ( input wire         clock12MHz,
 	);
 `else
   wire[4:0] s_pllClocks;
-  
+  localparam CLOCKFREQUENCY = 42428571;
+ 
   assign s_pixelClock = s_pllClocks[0];
   assign s_pixelClkX2 = s_pllClocks[1];
   assign s_systemClock = s_pllClocks[2];
@@ -275,7 +277,7 @@ module or1300DualCore ( input wire         clock12MHz,
   wire s_dipswitchIrq, s_buttonsIrq, s_1KHzTick;
   wire [31:0] s_switchesAddressData;
 
-  switches #( .cpuFrequencyInHz(`ifdef GECKO5Education 42857143 `else 42428571 `endif),
+  switches #( .cpuFrequencyInHz(CLOCKFREQUENCY),
               .baseAddress(32'h50000080)) switchesAndJoy
             ( .clock(s_systemClock),
               .reset(s_reset),
@@ -430,15 +432,17 @@ module or1300DualCore ( input wire         clock12MHz,
   wire        s_sdramInitBusy, s_sdramEndTransaction, s_sdramDataValid;
   wire        s_sdramBusy, s_sdramBusError;
   wire [31:0] s_sdramAddressData;
+  wire [1:0]  s_sdramDelay;
   wire        s_cpuReset = s_reset | s_sdramInitBusy | ~s_softResetCountReg[4];
   
   sdramController #( .baseAddress(32'h00000000),
-                     .systemClockInHz(`ifdef GECKO5Education 42857143 `else 42428571 `endif)) sdram
+                     .systemClockInHz(CLOCKFREQUENCY)) sdram
                    ( .clock(s_systemClock),
                      .clockX2(s_systemClockX2),
                      .reset(s_reset),
                      .memoryDistanceIn(s_memoryDistance),
                      .sdramInitBusy(s_sdramInitBusy),
+                     .sdramDelay(s_sdramDelay),
                      .beginTransactionIn(s_beginTransaction),
                      .endTransactionIn(s_endTransaction),
                      .readNotWriteIn(s_readNotWrite),
@@ -550,6 +554,7 @@ module or1300DualCore ( input wire         clock12MHz,
                .jumpAddressIn(s_cpu1JumpAddressIn),
                .stackTopPointer(s_cpu1stackTopReg),
                .cacheConfiguration(s_cpu1CacheConfiguration),
+               .sdramDelay(s_sdramDelay),
                .memoryDistanceIn(s_memoryDistance),
                .memoryDistanceOut(s_memoryDistance),
                .dataOutReg(s_cpu1DataOutReg),
@@ -607,7 +612,7 @@ module or1300DualCore ( input wire         clock12MHz,
   wire [7:0]  s_spm1BurstSize;
   wire [31:0] s_spm1AddressData;
   
-  spm4k #(.slaveBaseAddress(32'h50000040),
+  spm8k #(.slaveBaseAddress(32'h50000040),
           .spmBaseAddress(32'hC0000000)) spm1
          (.clock(s_systemClock),
           .reset(s_reset),
@@ -731,6 +736,7 @@ module or1300DualCore ( input wire         clock12MHz,
                .jumpAddressIn(s_cpu2JumpAddressReg[1]),
                .stackTopPointer(s_cpu2stackTopReg[1]),
                .cacheConfiguration(s_cpu2CacheConfigurationReg[1]),
+               .sdramDelay(),
                .memoryDistanceIn(s_memoryDistance),
                .memoryDistanceOut(),
                .dataOutReg(),
@@ -788,7 +794,7 @@ module or1300DualCore ( input wire         clock12MHz,
   wire [7:0]  s_spm2BurstSize;
   wire [31:0] s_spm2AddressData;
   
-  spm4k #(.slaveBaseAddress(32'h50000100),
+  spm8k #(.slaveBaseAddress(32'h50000100),
           .spmBaseAddress(32'hC0000000)) spm2
          (.clock(s_systemClock),
           .reset(s_reset),
@@ -848,7 +854,7 @@ module or1300DualCore ( input wire         clock12MHz,
    * Here we define a custom instruction that implements a simple I2C interface
    *
    */
-  i2cCustomInstr #(.CLOCK_FREQUENCY(59400000),
+  i2cCustomInstr #(.CLOCK_FREQUENCY(CLOCKFREQUENCY),
                    .I2C_FREQUENCY(400000),
                    .CUSTOM_ID(8'd5)) i2cm
                   (.clock(s_systemClock),
@@ -905,7 +911,7 @@ module or1300DualCore ( input wire         clock12MHz,
   wire [7:0] s_camBurstSize;
   
   camera #(.customInstructionId(8'd7),
-           .clockFrequencyInHz(59400000)) camIf
+           .clockFrequencyInHz(CLOCKFREQUENCY)) camIf
           (.clock(s_systemClock),
            .pclk(camPclk),
            .reset(s_cpuReset),

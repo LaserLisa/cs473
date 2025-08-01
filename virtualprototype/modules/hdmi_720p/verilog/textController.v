@@ -164,7 +164,7 @@ module textController #(parameter [15:0] defaultForeGroundColor = 16'hFFFF,
    */
   reg [13:0] s_clearScreenCounterReg;
   
-  always @(posedge clock) s_clearScreenCounterReg <= (s_clearScreen == 1'b1) ? 13'd0 : (s_clearScreenCounterReg[13] == 1'b0) ? s_clearScreenCounterReg + 13'b1 : s_clearScreenCounterReg;
+  always @(posedge clock) s_clearScreenCounterReg <= (s_clearScreen == 1'b1) ? 13'd0 : (s_clearScreenCounterReg[13] == 1'b0) ? s_clearScreenCounterReg + 14'd1 : s_clearScreenCounterReg;
   
   /*
    *
@@ -192,7 +192,6 @@ module textController #(parameter [15:0] defaultForeGroundColor = 16'hFFFF,
    */
   reg [6:0]  s_cursorXPos, s_cursorYPos;
   reg [12:0] s_screenOffsetReg;
-  wire [12:0] s_screenOffsetMask = (nrOfScreens[1] == 1'b0) ? 13'b0111111111111 : 13'b1111111111111;
   wire       s_isOnCursorXPos = ((s_smallCharsReg == 1'b1 && ((pixelIndex[10:3] - {5'd0,s_TextCorrectionReg}) == {1'b0,s_cursorXPos})) ||
                                  (s_smallCharsReg == 1'b0 && ((pixelIndex[10:4] - {5'd0,s_TextCorrectionReg}) == s_cursorXPos))) ? 1'b1 : 1'b0;
   wire       s_isOnCursorYPos = ((s_smallCharsReg == 1'b1 && (lineIndex == {s_cursorYPos,3'd7})) ||
@@ -212,9 +211,9 @@ module textController #(parameter [15:0] defaultForeGroundColor = 16'hFFFF,
       else if (s_nextLine == 1'b1)
         begin
           s_cursorXPos      <= 7'd0;
-          if (s_cursorYPos == (s_maxLines - 6'd1))
+          if (s_cursorYPos == (s_maxLines - 7'd1))
             begin
-              s_screenOffsetReg <= (s_screenOffsetReg + {6'd0,s_maxCharsPerLine}) & s_screenOffsetMask;
+              s_screenOffsetReg <= (s_screenOffsetReg + {6'd0,s_maxCharsPerLine});
               s_clearLine       <= 1'b1;
             end
           else 
@@ -225,12 +224,12 @@ module textController #(parameter [15:0] defaultForeGroundColor = 16'hFFFF,
         end
      else if (s_weChar == 1'b1)
        begin
-         if (s_cursorXPos == (s_maxCharsPerLine - 6'd1))
+         if (s_cursorXPos == (s_maxCharsPerLine - 7'd1))
            begin
              s_cursorXPos <= 6'd0;
-             if (s_cursorYPos == (s_maxLines - 6'd1))
+             if (s_cursorYPos == (s_maxLines - 7'd1))
                begin
-                 s_screenOffsetReg <= (s_screenOffsetReg + {6'd0,s_maxCharsPerLine}) & s_screenOffsetMask;
+                 s_screenOffsetReg <= (s_screenOffsetReg + {6'd0,s_maxCharsPerLine});
                  s_clearLine       <= 1'b1;
                end
              else
@@ -241,7 +240,7 @@ module textController #(parameter [15:0] defaultForeGroundColor = 16'hFFFF,
            end
          else
            begin
-             s_cursorXPos <= s_cursorXPos + 6'd1;
+             s_cursorXPos <= s_cursorXPos + 7'd1;
              s_clearLine  <= 1'b0;
            end
        end

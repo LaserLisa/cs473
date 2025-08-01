@@ -44,7 +44,7 @@ module uartBus #( parameter [31:0] baseAddress = 0 )
   always @(posedge clock)
     begin
       s_startTransactionReg  <= (reset == 1'b1) ? 1'b0 : beginTransactionIn;
-      s_transactionActiveReg <= (reset == 1'b1 || endTransactionIn == 1'b1) ? 1'b1 : (beginTransactionIn == 1'b1) ? 1'b1 : s_transactionActiveReg;
+      s_transactionActiveReg <= (reset == 1'b1 || endTransactionIn == 1'b1) ? 1'b0 : (beginTransactionIn == 1'b1) ? 1'b1 : s_transactionActiveReg;
       s_readNWriteReg        <= (reset == 1'b1) ? 1'b0 : (beginTransactionIn == 1'b1) ? readNWriteIn : s_readNWriteReg;
       s_byteEnablesReg       <= (reset == 1'b1) ? 4'd0 : (beginTransactionIn == 1'b1) ? byteEnablesIn : s_byteEnablesReg;
       s_burstSizeReg         <= (reset == 1'b1) ? 8'd0 : (beginTransactionIn == 1'b1) ? burstSizeIn : s_burstSizeReg;

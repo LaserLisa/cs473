@@ -305,14 +305,14 @@ module dCache   ( input wire         clock,
  always @(posedge clock)
    if (reset == 1'b1 || (s_flushRequestReg == 1'b1 && s_internalStall == 1'b0))
      begin
-       s_stage1UReadReg       <= 0;
-       s_stage1UWriteReg      <= 0;
-       s_stage1CReadReg       <= 0;
-       s_stage1CWriteReg      <= 0;
-       s_stage1SpmReadReg     <= 0;
-       s_stage1CasReg         <= 0;
-       s_stage1SwapReg        <= 0;
-       s_stage1CacheActionReg <= 0;
+       s_stage1UReadReg       <= 1'b0;
+       s_stage1UWriteReg      <= 1'b0;
+       s_stage1CReadReg       <= 1'b0;
+       s_stage1CWriteReg      <= 1'b0;
+       s_stage1SpmReadReg     <= 1'b0;
+       s_stage1CasReg         <= 1'b0;
+       s_stage1SwapReg        <= 1'b0;
+       s_stage1CacheActionReg <= 1'b0;
      end
    else if (s_internalStall == 1'b0)
      begin

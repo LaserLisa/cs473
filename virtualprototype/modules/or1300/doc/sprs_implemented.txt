@@ -133,6 +133,7 @@ GROUP 10:
 
 GROUP 27:
     0 Memory distance value (default = 0 => as fast as possible)
+    1 Sdram delay value (bits 1..0, write only)
 
 GROUP 28:
     0  Bus error exception vector                                   0xF0000008

@@ -5,6 +5,7 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
                                             reset,
                          input wire [5:0]   memoryDistanceIn,
                          output wire        sdramInitBusy,
+                         input wire [1:0]   sdramDelay,
                          
                          // here the bus interface is defined
                          input wire         beginTransactionIn,
@@ -24,21 +25,22 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
                          
                          // here the off-chip signals are defined
                          output wire        sdramClk,
-                         output reg         sdramCke,
+                         output wire        sdramCke,
                                             sdramCsN,
                                             sdramRasN,
                                             sdramCasN,
                                             sdramWeN,
-                         output reg  [1:0]  sdramDqmN,
-                         output reg  [12:0] sdramAddr,
-                         output reg  [1:0]  sdramBa,
+                         output wire [1:0]  sdramDqmN,
+                                            sdramBa,
+                         output wire [12:0] sdramAddr,
                          inout wire [15:0]  sdramData);
 
-  localparam [4:0] RESET_STATE = 5'd0, WAIT_100_MICRO = 5'd1, DO_PRECHARGE = 5'd2, WAIT_PRECHARGE = 5'd3, DO_AUTO_REFRESH1 = 5'd4, WAIT_AUTO_REFRESH1 = 5'd5;
-  localparam [4:0] DO_AUTO_REFRESH2 = 5'd6, WAIT_AUTO_REFRESH2 = 5'd7, SET_MODE_REG = 5'd8, WAIT_MODE_REG = 5'd9, SET_EXTENDED_MODE_REG = 5'd10, WAIT_EXTENDED_MODE_REG = 5'd11;
-  localparam [4:0] IDLE = 5'd12, DO_AUTO_REFRESH = 5'd13, WAIT_AUTO_REFRESH = 5'd14, INIT_READ_WRITE = 5'd15, INIT_READ_BURST1 = 5'd16, WAIT_READ_BURST1 = 5'd17, INIT_READ_BURST2 = 5'd18;
-  localparam [4:0] WAIT_READ_BURST2 = 5'd19, WAIT_READ_BURST3 = 5'd20, DO_READ = 5'd21, END_READ_TRANSACTION = 5'd22, INIT_WORD_WRITE = 5'd23, WRITE_PRECHARGE = 5'd24, WRITE_LO = 5'd25;
-  localparam [4:0] WAIT_WRITE_LO = 5'd26, WRITE_HI = 5'd27, WAIT_WRITE_PRECHARGE = 5'd28, WAIT_READ_BURST4 = 5'd29, WAIT_WRITE_HI = 5'd30, SECOND_BURST = 5'd31;
+  localparam [5:0] RESET_STATE = 6'd0, WAIT_100_MICRO = 6'd1, DO_PRECHARGE = 6'd2, WAIT_PRECHARGE = 6'd3, DO_AUTO_REFRESH1 = 6'd4, WAIT_AUTO_REFRESH1 = 6'd5;
+  localparam [5:0] DO_AUTO_REFRESH2 = 6'd6, WAIT_AUTO_REFRESH2 = 6'd7, SET_MODE_REG = 6'd8, WAIT_MODE_REG = 6'd9, SET_EXTENDED_MODE_REG = 6'd10, WAIT_EXTENDED_MODE_REG = 6'd11;
+  localparam [5:0] IDLE = 6'd12, DO_AUTO_REFRESH = 6'd13, WAIT_AUTO_REFRESH = 6'd14, INIT_READ_WRITE = 6'd15, INIT_READ_BURST1 = 6'd16, WAIT_READ_BURST1 = 6'd17, INIT_READ_BURST2 = 6'd18;
+  localparam [5:0] WAIT_READ_BURST2 = 6'd19, WAIT_READ_BURST3 = 6'd20, DO_READ = 6'd21, END_READ_TRANSACTION = 6'd22, INIT_WORD_WRITE = 6'd23, WRITE_PRECHARGE = 6'd24, WRITE_LO = 6'd25;
+  localparam [5:0] WAIT_WRITE_LO = 6'd26, WRITE_HI = 6'd27, WAIT_WRITE_PRECHARGE = 6'd28, WAIT_READ_BURST4 = 6'd29, WAIT_WRITE_HI = 6'd30, SECOND_BURST = 6'd31,
+  WAIT_READ_BURST5 = 6'd32;
   
   localparam [14:0] MODE_REG_VALUE = 15'b000001000110111, EXTENDED_MODE_REG_VALUE = 15'b100000001000000;
   localparam [13:0] HUNDERT_MICRO_COUNT = (systemClockInHz / 10000) - 1;
@@ -46,7 +48,7 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
   localparam [13:0] AUTO_REFRESH_DELAY_COUNT  = (80 * SYSTEMCLOCK_IN_MHZ)/1000;
   localparam [13:0] AUTO_REFRESH_PERIOD = ((78125 * SYSTEMCLOCK_IN_MHZ) / 1000) - 1;
 
-  reg [4:0] s_sdramCurrentState, s_sdramNextState;
+  reg [5:0] s_sdramCurrentState, s_sdramNextState;
   reg       s_sdramClkReg;
   reg       s_sdramDataValidReg;
   reg       s_writeDoneReg;
@@ -214,7 +216,8 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
       INIT_READ_BURST2       : s_sdramNextState <= WAIT_READ_BURST2;
       WAIT_READ_BURST2       : s_sdramNextState <= WAIT_READ_BURST3;
       WAIT_READ_BURST3       : s_sdramNextState <= WAIT_READ_BURST4;
-      WAIT_READ_BURST4       : s_sdramNextState <= DO_READ;
+      WAIT_READ_BURST4       : s_sdramNextState <= (sdramDelay[1] == 1'b1) ? WAIT_READ_BURST5 : DO_READ;
+      WAIT_READ_BURST5       : s_sdramNextState <= DO_READ;
       DO_READ                : s_sdramNextState <= (s_shortCountIsZero == 1'b0) ? DO_READ :
                                                    (s_readPendingReg == 1'b1 && s_requiresTwoBursts == 1'b1) ? WRITE_PRECHARGE : END_READ_TRANSACTION;
       END_READ_TRANSACTION   : s_sdramNextState <= WRITE_PRECHARGE;
@@ -256,9 +259,12 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
    * Here we define the sdram interface
    *
    */
+  
   reg [15:0] s_sdramDataReg, s_wordLoReg, s_wordHiReg, s_sdramDataOutReg;
   reg [32:0] s_dataToRamReg;
-  reg  s_sdramEnableDataOutReg;
+  reg  s_sdramEnableDataOutReg, s_sdramCkeReg, s_sdramCsNReg, s_sdramRasNReg, s_sdramCasNReg, s_sdramWeNReg;
+  reg [1:0] s_sdramDqmNReg, s_sdramBaReg;
+  reg [12:0] s_sdramAddrReg;
   wire s_nCs    = (s_sdramCurrentState == RESET_STATE || s_sdramCurrentState == WAIT_100_MICRO) ? 1'b1 : 1'b0;
   wire s_nRas   = (s_sdramCurrentState == DO_PRECHARGE ||
                    s_sdramCurrentState == WRITE_PRECHARGE ||
@@ -302,9 +308,94 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
   wire [15:0] s_sdramDataOut = (s_sdramCurrentState == WRITE_HI) ? s_dataToRamReg[31:16] : s_dataToRamReg[15:0];
   wire        s_sdramDataOutValid = (s_sdramCurrentState == WRITE_LO || s_sdramCurrentState == WRITE_HI) ? 1'b1 : 1'b0;
   
-  assign sdramClk = s_sdramClkReg;
   assign s_readData = {s_wordHiReg,s_wordLoReg};
+`ifdef GECKO5Education
+  wire [15:0] s_sdramDataIn;
+  genvar i;
+  generate
+    for (i = 0 ; i < 16 ; i = i + 1)
+      ecp5iob iopad
+        (.clock(clockX2),
+         .oe(s_sdramEnableDataOutReg),
+         .d(s_sdramDataOutReg[i]),
+         .q(s_sdramDataIn[i]),
+         .pad(sdramData[i]));
+  endgenerate
+  OFS1P3IX clockff
+    (.CD(1'd0),
+     .D(s_sdramClkReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramClk));
+  OFS1P3IX ckeff
+    (.CD(1'd0),
+     .D(s_sdramCkeReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramCke));
+  OFS1P3IX csNff
+    (.CD(1'd0),
+     .D(s_sdramCsNReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramCsN));
+  OFS1P3IX rasNff
+    (.CD(1'd0),
+     .D(s_sdramRasNReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramRasN));
+  OFS1P3IX casNff
+    (.CD(1'd0),
+     .D(s_sdramCasNReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramCasN));
+  OFS1P3IX weNff
+    (.CD(1'd0),
+     .D(s_sdramWeNReg),
+     .SP(1'b1),
+     .SCLK(clockX2),
+     .Q(sdramWeN));
+  generate
+    for (i = 0 ; i < 2 ; i = i + 1)
+      begin
+        OFS1P3IX dqmNff
+          (.CD(1'd0),
+           .D(s_sdramDqmNReg[i]),
+           .SP(1'b1),
+           .SCLK(clockX2),
+           .Q(sdramDqmN[i]));
+        OFS1P3IX baff
+          (.CD(1'd0),
+           .D(s_sdramBaReg[i]),
+           .SP(1'b1),
+           .SCLK(clockX2),
+           .Q(sdramBa[i]));
+      end
+  endgenerate
+
+  generate
+    for (i = 0 ; i < 13 ; i = i + 1)
+      OFS1P3IX dqmNff
+        (.CD(1'd0),
+         .D(s_sdramAddrReg[i]),
+         .SP(1'b1),
+         .SCLK(clockX2),
+         .Q(sdramAddr[i]));
+  endgenerate
+`else
   assign sdramData = (s_sdramEnableDataOutReg == 1'b1) ? s_sdramDataOutReg : {16{1'bZ}};
+  assign sdramClk = s_sdramClkReg;
+  assign sdramCke = s_sdramCkeReg;
+  assign sdramCsN = s_sdramCsNReg;
+  assign sdramRasN = s_sdramRasNReg;
+  assign sdramCasN = s_sdramCasNReg;
+  assign sdramWeN  = s_sdramWeNReg;
+  assign sdramDqmN = s_sdramDqmNReg;
+  assign sdramBa   = s_sdramBaReg;
+  assign sdramAddr = s_sdramAddrReg;
+`endif
   
   always @(posedge clock)
     begin
@@ -316,32 +407,67 @@ module sdramController #( parameter [31:0] baseAddress = 32'h00000000,
   always @(posedge clockX2)
     begin
       s_sdramClkReg       <= (reset == 1'b1) ? 1'b1 : ~s_sdramClkReg;
-      sdramCke            <= ~reset;
-      s_sdramDataReg      <= (s_sdramCurrentState == DO_READ && s_sdramClkReg == 1'b0) ? sdramData : s_sdramDataReg;
+      s_sdramCkeReg       <= ~reset;
+`ifdef GECKO5Education
+      s_sdramDataReg      <= (s_sdramCurrentState == DO_READ && s_sdramClkReg == sdramDelay[0]) ? s_sdramDataIn : s_sdramDataReg;
+`else
+      s_sdramDataReg      <= (s_sdramCurrentState == DO_READ && s_sdramClkReg == 1'b1) ? sdramData : s_sdramDataReg;
+`endif
       s_sdramDataValidReg <= (reset == 1'b1) ? 1'b0 : (s_sdramCurrentState == DO_READ && s_sdramClkReg == 1'b1) ? ~s_shortCountIsZero : (s_sdramClkReg == 1'b1) ? 1'b0 : s_sdramDataValidReg;
       s_dataToRamReg      <= (reset == 1'b1) ? 32'd0 : (s_sdramCurrentState == INIT_WORD_WRITE && s_sdramClkReg == 1'b1) ? s_busDataReg : s_dataToRamReg;
       if (reset == 1'b1)
         begin
-          sdramCsN                <= 1'b1;
-          sdramRasN               <= 1'b1;
-          sdramCasN               <= 1'b1;
-          sdramWeN                <= 1'b1;
-          sdramBa                 <= 2'd0;
-          sdramDqmN               <= 2'd0;
-          sdramAddr               <= 13'd0;
+          s_sdramCsNReg           <= 1'b1;
+          s_sdramRasNReg          <= 1'b1;
+          s_sdramCasNReg          <= 1'b1;
+          s_sdramWeNReg           <= 1'b1;
+          s_sdramBaReg            <= 2'd0;
+          s_sdramDqmNReg          <= 2'd0;
+          s_sdramAddrReg          <= 13'd0;
           s_sdramEnableDataOutReg <= 1'd0;
         end
       else if (s_sdramClkReg == 1'b1)
         begin
-          sdramCsN                <= s_nCs;
-          sdramRasN               <= s_nRas;
-          sdramCasN               <= s_nCas;
-          sdramWeN                <= s_nWe;
-          sdramBa                 <= s_bA;
-          sdramDqmN               <= ~s_bS;
-          sdramAddr               <= s_address;
+          s_sdramCsNReg           <= s_nCs;
+          s_sdramRasNReg          <= s_nRas;
+          s_sdramCasNReg          <= s_nCas;
+          s_sdramWeNReg           <= s_nWe;
+          s_sdramBaReg            <= s_bA;
+          s_sdramDqmNReg          <= ~s_bS;
+          s_sdramAddrReg          <= s_address;
           s_sdramEnableDataOutReg <= s_sdramDataOutValid;
           s_sdramDataOutReg       <= s_sdramDataOut;
         end
     end
+endmodule
+
+module ecp5iob (
+   input wire  clock,
+               oe,
+               d,
+   output wire q,
+   inout wire pad);
+
+   wire T,I,O;
+   
+   OFS1P3IX triFF
+     (.CD(1'b0),
+      .D(~oe),
+      .SP(1'b1),
+      .SCLK(clock),
+      .Q(T));
+   BB buffer (.T(T),.I(I),.O(O),.B(pad));
+   OFS1P3IX dataOutFF
+     (.CD(1'b0),
+      .D(d),
+      .SP(1'b1),
+      .SCLK(clock),
+      .Q(I));
+   IFS1P3IX dataInFF
+     (.CD(1'b0),
+      .D(O),
+      .SP(1'b1),
+      .SCLK(clock),
+      .Q(q));
+   
 endmodule

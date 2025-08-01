@@ -31,69 +31,67 @@ module spm8k #(parameter [31:0] slaveBaseAddress = 0,
                output wire [3:0]  byteEnablesOut,
                output wire [7:0]  burstSizeOut,
                output wire [31:0] addressDataOut);
-
-  reg         s_CsReg;
-  reg [31:0]  s_dataFromSpmReg;
-  wire [31:0] s_dmaAddress, s_dmaDataOut, s_dmaDataIn, s_lookupData;
-  wire        s_dmaWe;
-  wire s_weData = spmCs & spmWe;
-  wire s_weMem1 = s_weData & spmByteEnables[0];
-  wire s_weMem2 = s_weData & spmByteEnables[1];
-  wire s_weMem3 = s_weData & spmByteEnables[2];
-  wire s_weMem4 = s_weData & spmByteEnables[3];
   
-  assign dataFromSpm = s_dataFromSpmReg;
+  reg[7:0] s_mem0 [2047:0];
+  reg[7:0] s_mem1 [2047:0];
+  reg[7:0] s_mem2 [2047:0];
+  reg[7:0] s_mem3 [2047:0];
+  
+  reg[31:0] s_dataFromSpm, s_dmaLookupData, s_dataFromSpmReg;
+  reg       s_CsReg;
+  
+  wire [31:0] s_dmaAddress, s_dmaDataOut;
+  wire        s_weSpm = spmCs & spmWe;
+  wire        s_dmaWe;
+  wire [7:0]  s_weData0 = (spmByteEnables[0] == 1'b1) ? dataToSpm[ 7: 0] : s_dmaLookupData[ 7: 0];
+  wire [7:0]  s_weData1 = (spmByteEnables[1] == 1'b1) ? dataToSpm[15: 8] : s_dmaLookupData[15: 8];
+  wire [7:0]  s_weData2 = (spmByteEnables[2] == 1'b1) ? dataToSpm[23:16] : s_dmaLookupData[23:16];
+  wire [7:0]  s_weData3 = (spmByteEnables[3] == 1'b1) ? dataToSpm[31:24] : s_dmaLookupData[31:24];
+  wire [10:0] s_lookupAddress = (s_weSpm == 1'b1) ? spmAddress[10:0] : s_dmaAddress[12:2];
 
-  sram2048X8Dp mem1 ( .clockA(clock),
-                      .writeEnableA(s_weMem1),
-                      .addressA(spmAddress[10:0]),
-                      .dataInA(dataToSpm[ 7:0 ]),
-                      .dataOutA(s_lookupData[ 7:0 ]),
-                      .clockB(~clock),
-                      .writeEnableB(s_dmaWe),
-                      .addressB(s_dmaAddress[12:2]),
-                      .dataInB(s_dmaDataOut[ 7:0 ]),
-                      .dataOutB(s_dmaDataIn[ 7:0 ]));
-
-  sram2048X8Dp mem2 ( .clockA(clock),
-                      .writeEnableA(s_weMem2),
-                      .addressA(spmAddress[10:0]),
-                      .dataInA(dataToSpm[15:8 ]),
-                      .dataOutA(s_lookupData[15:8 ]),
-                      .clockB(~clock),
-                      .writeEnableB(s_dmaWe),
-                      .addressB(s_dmaAddress[12:2]),
-                      .dataInB(s_dmaDataOut[15:8 ]),
-                      .dataOutB(s_dmaDataIn[15:8 ]));
-
-  sram2048X8Dp mem3 ( .clockA(clock),
-                      .writeEnableA(s_weMem3),
-                      .addressA(spmAddress[10:0]),
-                      .dataInA(dataToSpm[23:16]),
-                      .dataOutA(s_lookupData[23:16]),
-                      .clockB(~clock),
-                      .writeEnableB(s_dmaWe),
-                      .addressB(s_dmaAddress[12:2]),
-                      .dataInB(s_dmaDataOut[23:16]),
-                      .dataOutB(s_dmaDataIn[23:16]));
-
-  sram2048X8Dp mem4 ( .clockA(clock),
-                      .writeEnableA(s_weMem4),
-                      .addressA(spmAddress[10:0]),
-                      .dataInA(dataToSpm[31:24]),
-                      .dataOutA(s_lookupData[31:24]),
-                      .clockB(~clock),
-                      .writeEnableB(s_dmaWe),
-                      .addressB(s_dmaAddress[12:2]),
-                      .dataInB(s_dmaDataOut[31:24]),
-                      .dataOutB(s_dmaDataIn[31:24]));
-
+  assign      dataFromSpm = s_dataFromSpmReg;
+  
   always @(posedge clock)
     begin
       s_CsReg          <= (reset == 1'b1) ? 1'b0 : spmCs;
-      s_dataFromSpmReg <= (reset == 1'b1) ? 32'd0 : (s_CsReg == 1'b1) ? s_lookupData : s_dataFromSpmReg;
+      s_dataFromSpmReg <= (reset == 1'b1) ? 32'd0 : (s_CsReg == 1'b1) ? s_dataFromSpm : s_dataFromSpmReg;
     end
-   
+
+  always @(posedge clock)
+    begin
+      if (s_weSpm == 1'b1)
+        begin
+          s_mem0[spmAddress[10:0]] <= s_weData0;
+          s_mem1[spmAddress[10:0]] <= s_weData1;
+          s_mem2[spmAddress[10:0]] <= s_weData2;
+          s_mem3[spmAddress[10:0]] <= s_weData3;
+        end
+      s_dataFromSpm[ 7: 0] <= s_mem0[spmAddress[10:0]];
+      s_dataFromSpm[15: 8] <= s_mem1[spmAddress[10:0]];
+      s_dataFromSpm[23:16] <= s_mem2[spmAddress[10:0]];
+      s_dataFromSpm[31:24] <= s_mem3[spmAddress[10:0]];
+    end
+  
+  always @(negedge clock)
+    begin
+      if (s_dmaWe == 1'b1)
+        begin
+          s_mem0[s_lookupAddress] <= s_dmaDataOut[ 7: 0];
+          s_mem1[s_lookupAddress] <= s_dmaDataOut[15: 8];
+          s_mem2[s_lookupAddress] <= s_dmaDataOut[23:16];
+          s_mem3[s_lookupAddress] <= s_dmaDataOut[31:24];
+        end
+      s_dmaLookupData[ 7: 0] <= s_mem0[s_lookupAddress];
+      s_dmaLookupData[15: 8] <= s_mem1[s_lookupAddress];
+      s_dmaLookupData[23:16] <= s_mem2[s_lookupAddress];
+      s_dmaLookupData[31:24] <= s_mem3[s_lookupAddress];
+    end
+    
+  reg [31:0] s_dmaLookupDataReg;
+  
+  always @(posedge clock) s_dmaLookupDataReg <= (s_weSpm == 1'b1) ? s_dmaLookupDataReg : s_dmaLookupData;
+  
+  wire [31:0] s_dmaReData = (s_weSpm == 1'b1) ? s_dmaLookupDataReg : s_dmaLookupData;
 
   spmDma #(.slaveBaseAddress(slaveBaseAddress),
            .spmBaseAddress(spmBaseAddress),
@@ -101,11 +99,11 @@ module spm8k #(parameter [31:0] slaveBaseAddress = 0,
           (.clock(clock),
            .reset(reset),
            .irq(irq),
-           .spmBusy(1'b0),
+           .spmBusy(s_weSpm),
            .spmAddress(s_dmaAddress),
            .spmWe(s_dmaWe),
            .spmWeData(s_dmaDataOut),
-           .spmReData(s_dmaDataIn),
+           .spmReData(s_dmaReData),
            .requestTransaction(requestTransaction),
            .transactionGranted(transactionGranted),
            .beginTransactionIn(beginTransactionIn),

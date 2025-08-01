@@ -3,18 +3,22 @@ module hdmi_720p ( input wire pixelClockIn,
                               testPicture,
                               pixelClkX2,
 `ifdef GECKO5Education
-                   output reg [4:0] hdmiRed,
+                   output wire[4:0] hdmiRed,
                                     hdmiBlue,
                                     hdmiGreen,
+                   output wire      pixelClock,
+                                    horizontalSync,
+                                    verticalSync,
+                                    activePixel,
 `else // this is for the GECKO4Education with an external single/dual HDMI-PMOD
                    output reg [3:0] red,
                                     green,
                                     blue,
+                   output reg       pixelClock,
+                                    horizontalSync,
+                                    verticalSync,
+                                    activePixel,
 `endif
-                   output wire pixelClock,
-                   output reg  horizontalSync,
-                               verticalSync,
-                               activePixel,
 
                    output reg [10:0] pixelIndex,
                    output reg [ 9:0] lineIndex,
@@ -43,7 +47,9 @@ module hdmi_720p ( input wire pixelClockIn,
                     verticalFrontPorch = 10'd5-10'd1,
                     verticalSyncCount = 10'd5-10'd1,
                     verticalActiveVideo = 10'd720-10'd1;
-
+  reg [4:0] s_redReg, s_blueReg;
+  reg [5:0] s_greenReg;
+  reg       s_hSyncReg, s_vSyncReg, s_activeReg;
   wire s_activeVideo;
   wire s_horizontalCounterZero, s_nextLine, s_verticalCounterZero;
   wire [4:0] s_red, s_blue;
@@ -60,29 +66,81 @@ module hdmi_720p ( input wire pixelClockIn,
 
   /* all outputs are registered */
   reg s_pixelClockReg;
-  
-  always @(posedge pixelClkX2)
-    if (reset == 1'b1) s_pixelClockReg <= 1'b1;
-    else s_pixelClockReg <= ~s_pixelClockReg;
-  
-  always @(posedge pixelClkX2)
-  if (s_pixelClockReg == 1'b1)
-    begin
 `ifdef GECKO5Education
-      hdmiRed        <= s_red;
-      hdmiGreen      <= s_green[5:1];
-      hdmiBlue       <= s_blue;
-`else
-      red            <= s_red[4:1];
-      green          <= s_green[5:2];
-      blue           <= s_blue[4:1];
-`endif
-      horizontalSync <= (testPicture == 0) ? hSyncIn : s_horizontalSync;
-      verticalSync   <= (testPicture == 0) ? vSyncIn : s_verticalSync;
-      activePixel    <= (testPicture == 0) ? activeIn : s_activeVideo;
-    end
+  OFS1P3IX hsyncff
+    (.CD(reset),
+     .D(s_hSyncReg),
+     .SP(1'b1),
+     .SCLK(pixelClkX2),
+     .Q(horizontalSync));
 
-  assign pixelClock = s_pixelClockReg;
+  OFS1P3IX vsyncff
+    (.CD(reset),
+     .D(s_vSyncReg),
+     .SP(1'b1),
+     .SCLK(pixelClkX2),
+     .Q(verticalSync));
+
+  OFS1P3IX activeff
+    (.CD(reset),
+     .D(s_activeReg),
+     .SP(1'b1),
+     .SCLK(pixelClkX2),
+     .Q(activePixel));
+
+  OFS1P3IX clockff
+    (.CD(reset),
+     .D(s_pixelClockReg),
+     .SP(1'b1),
+     .SCLK(pixelClkX2),
+     .Q(pixelClock));
+
+  genvar i;
+  generate
+    for (i = 0; i < 5 ; i = i + 1)
+      begin
+        OFS1P3IX redff
+          (.CD(reset),
+           .D(s_redReg[i]),
+           .SP(1'b1),
+           .SCLK(pixelClkX2),
+           .Q(hdmiRed[i]));
+        OFS1P3IX greenff
+          (.CD(reset),
+           .D(s_greenReg[i+1]),
+           .SP(1'b1),
+           .SCLK(pixelClkX2),
+           .Q(hdmiGreen[i]));
+        OFS1P3IX blueff
+          (.CD(reset),
+           .D(s_blueReg[i]),
+           .SP(1'b1),
+           .SCLK(pixelClkX2),
+           .Q(hdmiBlue[i]));
+      end
+  endgenerate
+`endif
+  
+  always @(posedge pixelClkX2)
+  begin
+    s_pixelClockReg <= (reset == 1'b1) ? 1'b1 : ~s_pixelClockReg;
+    s_redReg        <= (s_pixelClockReg == 1'b1) ? s_red : s_redReg;
+    s_greenReg      <= (s_pixelClockReg == 1'b1) ? s_green : s_greenReg;
+    s_blueReg       <= (s_pixelClockReg == 1'b1) ? s_blue : s_blueReg;
+    s_hSyncReg     <= (s_pixelClockReg == 1'b0) ? s_hSyncReg : (testPicture == 0) ? hSyncIn : s_horizontalSync;
+    s_vSyncReg     <= (s_pixelClockReg == 1'b0) ? s_vSyncReg : (testPicture == 0) ? vSyncIn : s_verticalSync;
+    s_activeReg    <= (s_pixelClockReg == 1'b0) ? s_activeReg : (testPicture == 0) ? activeIn : s_activeVideo;
+`ifndef GECKO5Education
+    red            <= s_redReg[4:1];
+    green          <= s_greenReg[5:2];
+    blue           <= s_blueReg[4:1];
+    horizontalSync <= s_hSyncReg;
+    verticalSync   <= s_vSyncReg;
+    activePixel    <= s_activeReg;
+    pixelClock     <= s_pixelClockReg;
+`endif
+  end
+
   // here some control signals are defined
   always @(posedge pixelClockIn)
   begin
@@ -128,7 +186,7 @@ module hdmi_720p ( input wire pixelClockIn,
     endcase
   end
   
-  always @(negedge pixelClockIn)
+  always @(posedge pixelClockIn)
   begin
     if (reset == 1'b1) 
       begin
