@@ -490,12 +490,12 @@ module or1300DualCore ( input wire         clock12MHz,
   wire        s_cpu1IcacheRequestBus, s_cpu1DcacheRequestBus;
   wire        s_cpu1IcacheBusAccessGranted, s_cpu1DcacheBusAccessGranted;
   wire        s_cpu1BeginTransaction, s_cpu1EndTransaction, s_cpu1ReadNotWrite;
-  wire [31:0] s_cpu1AddressData, s_delayResult, s_i2cCiResult, s_camCiResult;
+  wire [31:0] s_cpu1AddressData, s_fractalResult, s_delayResult, s_i2cCiResult, s_camCiResult;
   wire [3:0]  s_cpu1byteEnables;
   wire        s_cpu1DataValid, s_cpu1PrivateData, s_cpu1PrivateDirty, s_camCiDone;
   wire [7:0]  s_cpu1BurstSize;
   wire        s_spm1Irq;
-  wire        s_softBios, s_delayCiDone, s_i2cCiDone;
+  wire        s_softBios, s_fractalDone, s_delayCiDone, s_i2cCiDone;
   reg [31:0]  s_cpu1stackTopReg;
   
   always @(posedge s_systemClock)
@@ -510,10 +510,10 @@ module or1300DualCore ( input wire         clock12MHz,
   assign s_cpu1IrqVector[2] = s_dipswitchIrq;
   assign s_cpu1IrqVector[1] = s_spm1Irq;
   assign s_cpu1IrqVector[0] = s_uartIrq;
-  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_delayCiDone | s_i2cCiDone | s_camCiDone;
+  assign s_cpu1CiDone = s_hdmiDone | s_swapByteDone | s_flashDone | s_fractalDone | s_delayCiDone | s_i2cCiDone | s_camCiDone;
   assign s_cpu1Enabled = 1'b1;
   assign s_cpu1ProfilingActive = 1'b1;
-  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_delayResult | s_i2cCiResult | s_camCiResult; 
+  assign s_cpu1CiResult = s_hdmiResult | s_swapByteResult | s_flashResult | s_fractalResult | s_delayResult | s_i2cCiResult | s_camCiResult; 
 
   or1300Top #( .processorId(1),
                .NumberOfProcessors(2),
@@ -660,11 +660,11 @@ module or1300DualCore ( input wire         clock12MHz,
   wire        s_cpu2IcacheRequestBus, s_cpu2DcacheRequestBus;
   wire        s_cpu2IcacheBusAccessGranted, s_cpu2DcacheBusAccessGranted;
   wire        s_cpu2BeginTransaction, s_cpu2EndTransaction, s_cpu2ReadNotWrite;
-  wire [31:0] s_cpu2AddressData, s_delayResult1;
+  wire [31:0] s_cpu2AddressData, s_delayResult1, s_fractalResult1;
   wire [3:0]  s_cpu2byteEnables;
   wire        s_cpu2DataValid, s_cpu2PrivateData, s_cpu2PrivateDirty;
   wire [7:0]  s_cpu2BurstSize;
-  wire        s_spm2Irq, s_delayCiDone1;
+  wire        s_spm2Irq, s_delayCiDone1, s_fractalDone1;
   
   reg         s_cpu2EnabledReg[2], s_cpu2ProfilingEnabledReg[2];
   reg [15:0]  s_cpu2CacheConfigurationReg[2];
@@ -673,8 +673,8 @@ module or1300DualCore ( input wire         clock12MHz,
   
   assign s_cpu2IrqVector[31:1] = 31'd0;
   assign s_cpu2IrqVector[0] = s_spm2Irq;
-  assign s_cpu2CiDone = s_hdmiDone1 | s_swapByteDone1 | s_delayCiDone1;
-  assign s_cpu2CiResult = s_hdmiResult1 | s_swapByteResult1 | s_delayResult1;
+  assign s_cpu2CiDone = s_hdmiDone1 | s_swapByteDone1 | s_delayCiDone1 | s_fractalDone1;
+  assign s_cpu2CiResult = s_hdmiResult1 | s_swapByteResult1 | s_delayResult1 | s_fractalResult1;
   
   always @(posedge s_systemClock)
     begin
@@ -898,6 +898,39 @@ module or1300DualCore ( input wire         clock12MHz,
              .ciValueB(s_cpu2CiDataB),
              .ciDone(s_delayCiDone1),
              .ciResult(s_delayResult1));
+
+  /*
+   *
+   * Here the fractal acceleration ci is defined
+   *
+   */
+  fractalIse #( .FRACTAL_CI(8'h20),
+                .NMAX_CI(8'h21),
+                .MULTIPLY_CI(8'h22),
+                .ADD_CI(8'h23)) fract1
+              ( .clock(s_systemClock),
+                .reset(s_reset),
+                .ciStart(s_cpu1CiStart),
+                .ciCke(s_cpu1CiCke),
+                .ciA(s_cpu1CiDataA),
+                .ciB(s_cpu1CiDataB),
+                .ciN(s_cpu1CiN),
+                .ciDone(s_fractalDone),
+                .ciResult(s_fractalResult) );
+
+  fractalIse #( .FRACTAL_CI(8'h20),
+                .NMAX_CI(8'h21),
+                .MULTIPLY_CI(8'h22),
+                .ADD_CI(8'h23)) fract2
+              ( .clock(s_systemClock),
+                .reset(s_reset),
+                .ciStart(s_cpu2CiStart),
+                .ciCke(s_cpu2CiCke),
+                .ciA(s_cpu2CiDataA),
+                .ciB(s_cpu2CiDataB),
+                .ciN(s_cpu2CiN),
+                .ciDone(s_fractalDone1),
+                .ciResult(s_fractalResult1) );
 
   /*
    *
