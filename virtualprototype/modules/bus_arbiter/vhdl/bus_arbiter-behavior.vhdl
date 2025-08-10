@@ -50,14 +50,17 @@
 
 ARCHITECTURE noPlatformSpecific OF bus_arbiter IS
 
-   COMPONENT queueMemory IS
-   PORT ( writeClock   : IN  std_logic;
-          writeEnable  : IN  std_logic;
-          writeAddress : IN  std_logic_vector( 4 DOWNTO 0 );
-          readAddress  : IN  std_logic_vector( 4 DOWNTO 0 );
-          writeData    : IN  std_logic_vector( 31 DOWNTO 0 );
-          dataReadPort : OUT std_logic_vector( 31 DOWNTO 0 ) );
-   END COMPONENT;
+  COMPONENT sramSDpSync is
+  generic( nrOfAddressBits : integer := 5;
+           nrOfDataBits    : integer := 32 );
+  port ( clock        : in  std_logic;
+         writeEnable  : in  std_logic;
+         writeAddress : in  unsigned( nrOfAddressBits - 1 downto 0 );
+         readAddress  : in  unsigned( nrOfAddressBits - 1 downto 0 );
+         writeData    : in  std_logic_vector( nrOfDataBits - 1 downto 0 );
+         readDataW    : out std_logic_vector( nrOfDataBits - 1 downto 0 );
+         readDataR    : out std_logic_vector( nrOfDataBits - 1 downto 0 ));
+  end COMPONENT;
    
    TYPE ARBITER_TYPE IS (IDLE , GRANT , WAIT_BEGIN , SERVICING , BUS_ERROR , END_TRANSACTION ,REMOVE);
    
@@ -390,11 +393,14 @@ BEGIN
    END PROCESS make_retry_count_reg;
    
    -- map components
-   queueMem : queueMemory
-   PORT MAP ( writeClock   => clock,
+   queueMem : sramSDpSync
+   GENERIC MAP ( nrOfAddressBits => 5,
+                 nrOfDataBits => 32)
+   PORT MAP ( clock        => clock,
               writeEnable  => s_insert_into_queue,
               writeAddress => s_queue_insert_pointer_reg,
               readAddress  => s_queue_remove_pointer_reg,
               writeData    => s_to_be_queued_mask,
-              dataReadPort => s_schedule_mask );
+              readDataW    => open,
+              readDataR    => s_schedule_mask );
 END noPlatformSpecific;

@@ -117,11 +117,14 @@ module busArbiter ( input wire         clock,
       default : s_toBeQueuedMask <= {s_selectMask[31:28],28'd0};
     endcase
 
-  queueMemory queue ( .writeClock(clock),
-                      .writeEnable(s_insertIntoQueue),
-                      .writeAddress(s_queueInsertPointerReg),
-                      .readAddress(s_queueRemovePointerReg),
-                      .writeData(s_toBeQueuedMask),
-                      .dataReadPort(s_grantMask) );
+  sramSDpSync #(.nrOfAddressBits(5),
+                .nrOfDataBits(32)) queue 
+               (.clock(clock),
+                .writeEnable(s_insertIntoQueue),
+                .writeAddress(s_queueInsertPointerReg),
+                .readAddress(s_queueRemovePointerReg),
+                .writeData(s_toBeQueuedMask),
+                .readDataW(),
+                .readDataR(s_grantMask) );
 
 endmodule

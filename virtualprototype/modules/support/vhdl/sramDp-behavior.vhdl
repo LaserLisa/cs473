@@ -1,6 +1,6 @@
-architecture platformIndependant of sram4096X8Dp is
+architecture platformIndependant of sramDp is
 
-  type memType is array (4095 downto 0) of std_logic_vector( 7 downto 0 );
+  type memType is array ((2**nrOfAddressBits) - 1 downto 0) of std_logic_vector( nrOfDataBits - 1 downto 0 );
   signal s_memContents : memType;
 
 begin

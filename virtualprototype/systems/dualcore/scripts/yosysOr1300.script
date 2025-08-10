@@ -1,9 +1,10 @@
+read -sv ../../../modules/support/verilog/synchroFlop.v
+read -sv ../../../modules/support/verilog/sramSdpSync.v
+read -sv ../../../modules/support/verilog/sramDp.v
 read -sv ../../../modules/bios/verilog/bios_rom.v
 read -sv ../../../modules/bios/verilog/softBios.v
-read -sv ../../../modules/bios/verilog/sram4096x8Dp.v
 read -sv ../../../modules/ssram/verilog/ssram_8k.v
 read -sv ../../../modules/bus_arbiter/verilog/busArbiter.v
-read -sv ../../../modules/bus_arbiter/verilog/queueMemory.v
 read -sv ../../../modules/hdmi_720p/font/ami386__8x8.v
 read -sv ../../../modules/hdmi_720p/verilog/graphicsController.v
 read -sv ../../../modules/hdmi_720p/verilog/hdmi_720p.v
@@ -67,7 +68,6 @@ read -sv ../../../modules/or1300/verilog/sram_16x32_dp_ar.v
 read -sv ../../../modules/or1300/verilog/sram_32x32_dp_ar.v
 read -sv ../../../modules/or1300/verilog/sram_512x32_dp.v
 read -sv ../../../modules/or1300/verilog/sram_512x32.v
-read -sv ../../../modules/or1300/verilog/synchroFlop.v
 read -sv ../../../modules/or1300/verilog/or1300-top.v
 read -sv ../../../modules/sdram/verilog/sdramFifo.v
 read -sv ../../../modules/sdram/verilog/sdram.v

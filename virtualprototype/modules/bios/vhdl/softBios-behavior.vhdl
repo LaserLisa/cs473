@@ -33,18 +33,20 @@ architecture platformIndependent of bios is
            data    : out std_logic_vector(31 downto 0));
   end component;
    
-  component sram4096x8Dp is
+  component sramDp is
+    generic ( nrOfAddressBits : integer := 12;
+              nrOfDataBits    : integer := 8);
     port ( clockA       : in  std_logic;
            writeEnableA : in  std_logic;
-           addressA     : in  unsigned( 11 downto 0 );
-           dataInA      : in  std_logic_vector( 7 downto 0 );
-           dataOutA     : out std_logic_vector( 7 downto 0 );
+           addressA     : in  unsigned( nrOfAddressBits - 1 downto 0 );
+           dataInA      : in  std_logic_vector( nrOfDataBits - 1 downto 0 );
+           dataOutA     : out std_logic_vector( nrOfDataBits - 1 downto 0 );
            clockB       : in  std_logic;
            writeEnableB : in  std_logic;
-           addressB     : in  unsigned( 11 downto 0 );
-           dataInB      : in  std_logic_vector( 7 downto 0 );
-           dataOutB     : out std_logic_vector( 7 downto 0 ));
-  end component;
+           addressB     : in  unsigned( nrOfAddressBits - 1 downto 0 );
+           dataInB      : in  std_logic_vector( nrOfDataBits - 1 downto 0 );
+           dataOutB     : out std_logic_vector( nrOfDataBits - 1 downto 0 ));
+  end  component;
 
 begin
   -- Here the outputs are defined
@@ -157,7 +159,9 @@ begin
     port map ( address => s_RomAddressReg,
                data    => s_romData);
 
-  softBios1 : sram4096x8Dp
+  softBios1 : sramDp
+    generic map ( nrOfAddressBits => 12,
+                  nrOfDataBits    => 8)
     port map ( clockA       => s_nClock,
                writeEnableA => '0',
                addressA     => s_RomAddressReg,
@@ -169,7 +173,9 @@ begin
                dataInB      => s_dataInReg( 7 downto 0 ),
                dataOutB     => open );
 
-  softBios2 : sram4096x8Dp
+  softBios2 : sramDp
+    generic map ( nrOfAddressBits => 12,
+                  nrOfDataBits    => 8)
     port map ( clockA       => s_nClock,
                writeEnableA => '0',
                addressA     => s_RomAddressReg,
@@ -181,7 +187,9 @@ begin
                dataInB      => s_dataInReg( 15 downto 8 ),
                dataOutB     => open );
 
-  softBios3 : sram4096x8Dp
+  softBios3 : sramDp
+    generic map ( nrOfAddressBits => 12,
+                  nrOfDataBits    => 8)
     port map ( clockA       => s_nClock,
                writeEnableA => '0',
                addressA     => s_RomAddressReg,
@@ -193,7 +201,9 @@ begin
                dataInB      => s_dataInReg( 23 downto 16 ),
                dataOutB     => open );
 
-  softBios4 : sram4096x8Dp
+  softBios4 : sramDp
+    generic map ( nrOfAddressBits => 12,
+                  nrOfDataBits    => 8)
     port map ( clockA       => s_nClock,
                writeEnableA => '0',
                addressA     => s_RomAddressReg,
