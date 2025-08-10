@@ -905,9 +905,7 @@ module or1300DualCore ( input wire         clock12MHz,
    *
    */
   fractalIse #( .FRACTAL_CI(8'h20),
-                .NMAX_CI(8'h21),
-                .MULTIPLY_CI(8'h22),
-                .ADD_CI(8'h23)) fract1
+                .NMAX_CI(8'h21)) fract1
               ( .clock(s_systemClock),
                 .reset(s_reset),
                 .ciStart(s_cpu1CiStart),
@@ -919,9 +917,7 @@ module or1300DualCore ( input wire         clock12MHz,
                 .ciResult(s_fractalResult) );
 
   fractalIse #( .FRACTAL_CI(8'h20),
-                .NMAX_CI(8'h21),
-                .MULTIPLY_CI(8'h22),
-                .ADD_CI(8'h23)) fract2
+                .NMAX_CI(8'h21)) fract2
               ( .clock(s_systemClock),
                 .reset(s_reset),
                 .ciStart(s_cpu2CiStart),

@@ -20,12 +20,6 @@ read -sv ../../../modules/spi/verilog/spiShiftQuad.v
 read -sv ../../../modules/spi/verilog/spiBus.v
 read -sv ../../../modules/swapbyteIse/verilog/swapByteIse.v
 read -sv ../../../modules/fractalIse/verilog/fractalIse.v
-read -sv ../../../modules/fractalIse/verilog/multiplyMyFlpt.v
-read -sv ../../../modules/fractalIse/verilog/addMyFlpt.v
-read -sv ../../../modules/fractalIse/verilog/leadingZeroSmall.v
-read -sv ../../../modules/fractalIse/verilog/leadingZeros.v
-read -sv ../../../modules/fractalIse/verilog/magnitudeCorrector.v
-read -sv ../../../modules/fractalIse/verilog/magnitudeShifter.v
 read -sv ../../../modules/i2c/verilog/i2cMaster.v
 read -sv ../../../modules/i2c/verilog/i2cCustomInstr.v
 read -sv ../../../modules/camera/verilog/camera.v
