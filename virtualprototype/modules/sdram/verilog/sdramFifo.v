@@ -30,15 +30,17 @@ module sdramFifo ( input wire        clock,
       readDataOut          <= s_readData;
     end
 
-  sram512X32Dp readMem ( .clockA(clock),
-                         .writeEnableA(s_doReadPush),
-                         .addressA(s_readPushAddressReg),
-                         .dataInA(readDataIn),
-                         .dataOutA(),
-                         .clockB(~clock),
-                         .writeEnableB(1'b0),
-                         .addressB(s_readPopAddressReg),
-                         .dataInB(32'd0),
-                         .dataOutB(s_readData));
+  sramDp #(.nrOfAddressBits(9),
+           .nrOfDataBits(32)) readMem 
+          ( .clockA(clock),
+            .writeEnableA(s_doReadPush),
+            .addressA(s_readPushAddressReg),
+            .dataInA(readDataIn),
+            .dataOutA(),
+            .clockB(~clock),
+            .writeEnableB(1'b0),
+            .addressB(s_readPopAddressReg),
+            .dataInB(32'd0),
+            .dataOutB(s_readData));
 
 endmodule
