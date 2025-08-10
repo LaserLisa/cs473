@@ -219,7 +219,7 @@ BEGIN
 
 -- assign components
    fifo_mem : sramLutRam
-      generic map ( nrOfAddressBits => 5,
+      generic map ( nrOfAddressBits => 4,
                     nrOfDataBits    => 8)
       PORT MAP ( clock        => clock,
                  writeData    => data_in,

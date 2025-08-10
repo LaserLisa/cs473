@@ -124,7 +124,7 @@ BEGIN
 
 -- assign components
    fifo_mem : sramLutRam
-      GENERIC MAP ( nrOfAddressBits => 5,
+      GENERIC MAP ( nrOfAddressBits => 4,
                     nrOfDataBits    => 8)
       PORT MAP ( clock        => clock,
                  writeData    => data_in,

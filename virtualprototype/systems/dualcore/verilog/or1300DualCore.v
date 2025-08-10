@@ -403,29 +403,6 @@ module or1300DualCore ( input wire         clock12MHz,
              .RxD(RxD),
              .TxD(TxD));
   /*
-   * Here we instantiate a 8 kbyte SSRAM in uncacheable space (for locks for example)
-   *
-   */
-  wire s_ssramEndTransaction, s_ssramDataValid;
-  wire [31:0] s_ssramAddressData;
-   
-  ssram_8k #(.baseAddress(32'hE0000000)) ssram1
-            (.clock(s_systemClock),
-             .reset(s_cpuReset),
-             .beginTransactionIn(s_beginTransaction),
-             .endTransactionIn(s_endTransaction),
-             .readNotWriteIn(s_readNotWrite),
-             .dataValidIn(s_dataValid),
-             .busyIn(s_busy),
-             .busErrorIn(s_busError),
-             .addressDataIn(s_addressData),
-             .byteEnablesIn(s_byteEnables),
-             .burstSizeIn(s_burstSize),
-             .endTransactionOut(s_ssramEndTransaction),
-             .dataValidOut(s_ssramDataValid),
-             .addressDataOut(s_ssramAddressData));
-
-  /*
    * Here we instantiate the SDRAM controller
    *
    */
@@ -467,6 +444,29 @@ module or1300DualCore ( input wire         clock12MHz,
                      .sdramAddr(sdramAddr),
                      .sdramBa(sdramBa),
                      .sdramData(sdramData));
+
+  /*
+   * Here we instantiate a 8 kbyte SSRAM in uncacheable space (for locks for example)
+   *
+   */
+  wire s_ssramEndTransaction, s_ssramDataValid;
+  wire [31:0] s_ssramAddressData;
+   
+  ssram_8k #(.baseAddress(32'hE0000000)) ssram1
+            (.clock(s_systemClock),
+             .reset(s_cpuReset),
+             .beginTransactionIn(s_beginTransaction),
+             .endTransactionIn(s_endTransaction),
+             .readNotWriteIn(s_readNotWrite),
+             .dataValidIn(s_dataValid),
+             .busyIn(s_busy),
+             .busErrorIn(s_busError),
+             .addressDataIn(s_addressData),
+             .byteEnablesIn(s_byteEnables),
+             .burstSizeIn(s_burstSize),
+             .endTransactionOut(s_ssramEndTransaction),
+             .dataValidOut(s_ssramDataValid),
+             .addressDataOut(s_ssramAddressData));
 
   /*
    * Here we instantiate the CPU
@@ -666,10 +666,10 @@ module or1300DualCore ( input wire         clock12MHz,
   wire [7:0]  s_cpu2BurstSize;
   wire        s_spm2Irq, s_delayCiDone1, s_fractalDone1;
   
-  reg         s_cpu2EnabledReg[2], s_cpu2ProfilingEnabledReg[2];
-  reg [15:0]  s_cpu2CacheConfigurationReg[2];
-  reg [31:0]  s_cpu2JumpAddressReg[2];
-  reg [31:0]  s_cpu2stackTopReg[2];
+  reg         s_cpu2EnabledReg[1:0], s_cpu2ProfilingEnabledReg[1:0];
+  reg [15:0]  s_cpu2CacheConfigurationReg[1:0];
+  reg [31:0]  s_cpu2JumpAddressReg[1:0];
+  reg [31:0]  s_cpu2stackTopReg[1:0];
   
   assign s_cpu2IrqVector[31:1] = 31'd0;
   assign s_cpu2IrqVector[0] = s_spm2Irq;

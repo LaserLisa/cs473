@@ -69,7 +69,7 @@ module uartRxFifo ( input wire        clock,
       end
   endgenerate
     
-  sramLutRam #(.nrOfAddressBits(5),
+  sramLutRam #(.nrOfAddressBits(4),
                .nrOfDataBits(8)) fifoMem 
               (.clock(clock),
                .writeEnable(s_fifoWe),
