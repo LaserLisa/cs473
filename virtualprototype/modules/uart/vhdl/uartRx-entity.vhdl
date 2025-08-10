@@ -50,7 +50,5 @@ ENTITY uart_rx_controler IS
          frame_error         : OUT std_logic;
          break_detected      : OUT std_logic;
          parity_error        : OUT std_logic;
-         overrun_error       : OUT std_logic;
-         rx_irq              : OUT std_logic;
-         busy                : OUT std_logic);
+         overrun_error       : OUT std_logic);
 END uart_rx_controler;

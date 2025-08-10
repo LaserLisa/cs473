@@ -185,15 +185,14 @@ BEGIN
       END IF;
    END PROCESS make_read_ack;
    
-   make_state_machine : PROCESS( clock , reset , enable ,
+   make_state_machine : PROCESS( clock , reset , 
                                  fifo_empty , baud_rate_x_2_tick ,
                                  s_half_bit_count_reg , s_state_machine_reg )
       VARIABLE v_next_state : std_logic_vector( 1 DOWNTO 0 );
    BEGIN
       CASE s_state_machine_reg IS
-         WHEN  "00"  => IF (fifo_empty = '0' AND
-                            enable = '1') THEN v_next_state := "01";
-                                          ELSE v_next_state := "00";
+         WHEN  "00"  => IF (fifo_empty = '0') THEN v_next_state := "01";
+                                              ELSE v_next_state := "00";
                         END IF;
          WHEN  "01"  => IF (baud_rate_x_2_tick = '1') THEN v_next_state := "11";
                                                       ELSE v_next_state := "01";

@@ -29,10 +29,12 @@ module uartTxFifo ( input wire        clock,
       s_readAddressReg  <= (reset == 1'b1) ? 4'd0 : (s_fifoRe == 1'b1) ? s_readAddressNext : s_readAddressReg;
     end
     
-  uartFifoMemory fifoMem ( .writeClock(clock),
-                           .writeEnable(s_fifoWe),
-                           .writeAddress(s_writeAddressReg),
-                           .readAddress(s_readAddressReg),
-                           .writeData(dataIn),
-                           .dataReadPort(dataOut) );
+  sramLutRam #(.nrOfAddressBits(5),
+               .nrOfDataBits(8)) fifoMem 
+              (.clock(clock),
+               .writeEnable(s_fifoWe),
+               .writeAddress(s_writeAddressReg),
+               .readAddress(s_readAddressReg),
+               .writeData(dataIn),
+               .readData(dataOut) );
 endmodule

@@ -38,14 +38,16 @@
 
 ARCHITECTURE platform_independent OF uart_rx_fifo IS
 
-   COMPONENT ff_ram IS
-      PORT ( clock      : IN  std_logic;
-             data_in    : IN  std_logic_vector( 7 DOWNTO 0 );
-             write_addr : IN  std_logic_vector( 3 DOWNTO 0 );
-             WriteEnable: IN  std_logic;
-             read_addr  : IN  std_logic_vector( 3 DOWNTO 0 );
-             data_out   : OUT std_logic_vector( 7 DOWNTO 0 ));
-   END COMPONENT;
+  COMPONENT sramLutRam is
+    generic( nrOfAddressBits : integer := 5;
+             nrOfDataBits    : integer := 32 );
+    port ( clock        : in  std_logic;
+           writeEnable  : in  std_logic;
+           writeAddress : in  unsigned( nrOfAddressBits - 1 downto 0 );
+           readAddress  : in  unsigned( nrOfAddressBits - 1 downto 0 );
+           writeData    : in  std_logic_vector( nrOfDataBits - 1 downto 0 );
+           readData     : out std_logic_vector( nrOfDataBits - 1 downto 0 ));
+   end COMPONENT;
 
    SIGNAL s_full_reg          : std_logic;
    SIGNAL s_empty_reg         : std_logic;
@@ -216,11 +218,13 @@ BEGIN
    END PROCESS make_nr_of_entries_reg;
 
 -- assign components
-   fifo_mem : ff_ram
-      PORT MAP ( clock      => clock,
-                 data_in    => data_in,
-                 write_addr => s_write_addr_reg,
-                 WriteEnable=> s_fifo_we,
-                 read_addr  => s_read_addr_reg,
-                 data_out   => data_out);
+   fifo_mem : sramLutRam
+      generic map ( nrOfAddressBits => 5,
+                    nrOfDataBits    => 8)
+      PORT MAP ( clock        => clock,
+                 writeData    => data_in,
+                 writeAddress => s_write_addr_reg,
+                 WriteEnable  => s_fifo_we,
+                 readAddress  => s_read_addr_reg,
+                 readData     => data_out);
 END platform_independent;

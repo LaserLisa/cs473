@@ -1,6 +1,7 @@
 read -sv ../../../modules/support/verilog/synchroFlop.v
 read -sv ../../../modules/support/verilog/sramSdpSync.v
 read -sv ../../../modules/support/verilog/sramDp.v
+read -sv ../../../modules/support/verilog/sramLutRam.v
 read -sv ../../../modules/bios/verilog/bios_rom.v
 read -sv ../../../modules/bios/verilog/softBios.v
 read -sv ../../../modules/ssram/verilog/ssram_8k.v
@@ -34,7 +35,6 @@ read -sv ../../../modules/sevenSegments/verilog/sevenSegments.v
 read -sv ../../../modules/switches/verilog/debouncerWithIrq.v
 read -sv ../../../modules/switches/verilog/switches.v
 read -sv ../../../modules/uart/verilog/baudGenerator.v
-read -sv ../../../modules/uart/verilog/uartFifoMemory.v
 read -sv ../../../modules/uart/verilog/uartRx.v
 read -sv ../../../modules/uart/verilog/uartTx.v
 read -sv ../../../modules/uart/verilog/uartRxFifo.v

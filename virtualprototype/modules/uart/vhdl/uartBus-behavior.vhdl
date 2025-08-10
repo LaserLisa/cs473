@@ -100,7 +100,6 @@ ARCHITECTURE behave OF uart_bus IS
    COMPONENT uart_tx_controller
       PORT( clock               : IN  std_logic;
             reset               : IN  std_logic;
-            enable              : IN  std_logic;
             baud_rate_x_2_tick  : IN  std_logic;
             control_reg         : IN  std_logic_vector( 6 DOWNTO 0 );
             fifo_data           : IN  std_logic_vector( 7 DOWNTO 0 );
@@ -122,9 +121,7 @@ ARCHITECTURE behave OF uart_bus IS
             frame_error         : OUT std_logic;
             break_detected      : OUT std_logic;
             parity_error        : OUT std_logic;
-            overrun_error       : OUT std_logic;
-            rx_irq              : OUT std_logic;
-            busy                : OUT std_logic);
+            overrun_error       : OUT std_logic);
    END COMPONENT;
    
    SIGNAL s_bus_address_reg        : std_logic_vector(31 DOWNTO 0 );
@@ -146,7 +143,6 @@ ARCHITECTURE behave OF uart_bus IS
    SIGNAL s_baud_rate_x_16_tick    : std_logic;
    SIGNAL s_baud_rate_x_2_tick     : std_logic;
 
-   SIGNAL s_n_reset                : std_logic;
    SIGNAL s_we_regs_vector         : std_logic_vector( 7 DOWNTO 0 );
    SIGNAL s_line_control_reg       : std_logic_vector( 7 DOWNTO 0 );
    SIGNAL s_divisor_reg            : std_logic_vector(15 DOWNTO 0 );
@@ -192,7 +188,6 @@ BEGIN
    irq <= s_line_status_irq OR s_rx_available_irq OR s_tx_empty_irq;
 
 -- Assign control signals
-   s_n_reset           <= NOT( reset );
    s_uart_rx           <= s_uart_rx_reg WHEN s_modem_control_reg(4) = '0' ELSE
                           s_uart_tx;
    s_uart_tx_next      <= s_uart_tx OR s_modem_control_reg(4);
@@ -593,9 +588,7 @@ BEGIN
                     frame_error         => s_rx_frame_error,
                     break_detected      => s_rx_break_detected,
                     parity_error        => s_rx_parity_error,
-                    overrun_error       => s_overrun_error,
-                    rx_irq              => OPEN,
-                    busy                => OPEN);
+                    overrun_error       => s_overrun_error);
    
    TXF : uart_fifo
          PORT MAP ( reset            => s_reset_tx_fifo,
@@ -610,7 +603,6 @@ BEGIN
    TXC : uart_tx_controller
          PORT MAP ( clock               => clock,
                     reset               => reset,
-                    enable              => s_n_reset,
                     baud_rate_x_2_tick  => s_baud_rate_x_2_tick,
                     control_reg         => s_line_control_reg( 6 DOWNTO 0 ),
                     fifo_data           => s_tx_fifo_data,

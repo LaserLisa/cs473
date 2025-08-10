@@ -41,7 +41,6 @@ USE ieee.std_logic_arith.all;
 ENTITY uart_tx_controller IS
    PORT( clock               : IN  std_logic;
          reset               : IN  std_logic;
-         enable              : IN  std_logic;
          baud_rate_x_2_tick  : IN  std_logic;
          
          control_reg         : IN  std_logic_vector( 6 DOWNTO 0 );

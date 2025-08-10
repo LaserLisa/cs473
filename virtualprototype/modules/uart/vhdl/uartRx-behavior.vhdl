@@ -68,7 +68,6 @@ BEGIN
    break_detected <= s_break_reg;
    overrun_error  <= s_overrun_reg;
    parity_error   <= s_parity_error_reg;
-   busy           <= '0' WHEN s_state_machine_reg = "00" ELSE '1';
    
 -- Assign control signals
    s_sample_tick <= baud_rate_x_16_tick WHEN s_baud_counter_reg = "0111" ELSE '0';
@@ -94,9 +93,7 @@ BEGIN
       IF (clock'event AND clock = '1') THEN
          IF (reset = '1') THEN s_delay_reg <= '0';
                                fifo_we     <= '0';
-                               rx_irq      <= '0';
                           ELSE fifo_we     <= s_delay_reg AND s_write_fifo;
-                               rx_irq      <= s_delay_reg;
                                IF (s_state_machine_reg = "11") THEN s_delay_reg <= '1'; 
                                                                ELSE s_delay_reg <= '0'; 
                                END IF;
