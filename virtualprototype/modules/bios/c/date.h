@@ -1,1 +1,1 @@
-#define compiledate "Build version: Tue Jul 29 10:35:44 AM CEST 2025\n\n"
+#define compiledate "Build version: Sun Aug 10 10:56:01 AM CEST 2025\n\n"

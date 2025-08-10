@@ -295,7 +295,7 @@ int main(int argc , char **argv)
       return -1;
     }
   free(fname);
-  fname = (char *)malloc( strlen(input_filename)+7 );
+  fname = (char *)malloc( strlen(input_filename)+9 );
   strcpy(fname,input_filename);
   strcat(fname,"_rom.v");
   verilog_pointer = fopen( fname , "w" );
@@ -307,7 +307,7 @@ int main(int argc , char **argv)
       return -1;
     }
   free(fname);
-  fname = (char *)malloc( strlen(input_filename)+7 );
+  fname = (char *)malloc( strlen(input_filename)+9 );
   strcpy(fname,input_filename);
   strcat(fname,"_rom.txt");
   memcont = fopen( fname , "w" );
