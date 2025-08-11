@@ -61,16 +61,8 @@ module spmDma #(parameter [31:0] slaveBaseAddress = 0,
    *
    */
 
-  function integer clog2;
-    input [31:0] value;
-    begin
-      for (clog2 = 0; value > 32'd0 ; clog2= clog2 + 1)
-        value = value >> 1;
-      end
-  endfunction
-
   localparam [31:0] maxSize      = {2'd0,spmSizeInBytes[31:2]};
-  localparam maxBit = clog2(spmSizeInBytes);
+  localparam maxBit = $clog2(spmSizeInBytes+1);
   
   localparam [3:0] IDLE = 4'd0, DECIDE = 4'd1, GEN_IRQ = 4'd2, REQUEST_TRANS = 4'd3, WAIT_TRANS_ACK = 4'd4, INIT_TRANSACTION = 4'd5, WAIT_READ_DATA = 4'd6, ERROR = 4'd7, 
                    DO_WRITE_DATA = 4'd8, ERROR_STOP = 4'd9, END_TRANSACTION = 4'd10, BUSY_WAIT = 4'd11;

@@ -252,20 +252,20 @@ module debugUnit #(parameter nrOfBreakpoints = 8) // maximum is 8, minimum 0
    * Here the trace buffer is defined
    *
    */
-  reg[7:0]    s_writeAddressReg;
+  reg[8:0]    s_writeAddressReg;
   reg[31:0]   s_timeStampReg;
   wire [31:0] s_tracePc, s_traceIr, s_traceData, s_traceTimeStamp;
   wire        s_weTrace = exeExecutedInstruction & ~stallIn & ~s_trapActiveReg;
   
   always @(posedge clock)
     begin
-      s_writeAddressReg <= (reset == 1'b1) ? 8'd0 : (s_weTrace == 1'b1) ? s_writeAddressReg + 8'd1 : s_writeAddressReg;
+      s_writeAddressReg <= (reset == 1'b1) ? 9'd0 : (s_weTrace == 1'b1) ? s_writeAddressReg + 9'd1 : s_writeAddressReg;
       s_timeStampReg    <= (reset == 1'b1) ? 32'd0 : s_timeStampReg + 32'd1;
     end
   
   sram512X32Dp traceback1 ( .clockA(~clock),
                             .writeEnableA(1'b0),
-                            .addressA(exeSprIndex[7:0]),
+                            .addressA(exeSprIndex[8:0]),
                             .dataInA(32'd0),
                             .dataOutA(s_tracePc),
                             .clockB(clock),
@@ -276,7 +276,7 @@ module debugUnit #(parameter nrOfBreakpoints = 8) // maximum is 8, minimum 0
                             
   sram512X32Dp traceback2 ( .clockA(~clock),
                             .writeEnableA(1'b0),
-                            .addressA(exeSprIndex[7:0]),
+                            .addressA(exeSprIndex[8:0]),
                             .dataInA(32'd0),
                             .dataOutA(s_traceIr),
                             .clockB(clock),
@@ -287,7 +287,7 @@ module debugUnit #(parameter nrOfBreakpoints = 8) // maximum is 8, minimum 0
                             
   sram512X32Dp traceback3 ( .clockA(~clock),
                             .writeEnableA(1'b0),
-                            .addressA(exeSprIndex[7:0]),
+                            .addressA(exeSprIndex[8:0]),
                             .dataInA(32'd0),
                             .dataOutA(s_traceData),
                             .clockB(clock),
@@ -298,7 +298,7 @@ module debugUnit #(parameter nrOfBreakpoints = 8) // maximum is 8, minimum 0
 
   sram512X32Dp traceback4 ( .clockA(~clock),
                             .writeEnableA(1'b0),
-                            .addressA(exeSprIndex[7:0]),
+                            .addressA(exeSprIndex[8:0]),
                             .dataInA(32'd0),
                             .dataOutA(s_traceTimeStamp),
                             .clockB(clock),
@@ -336,10 +336,14 @@ module debugUnit #(parameter nrOfBreakpoints = 8) // maximum is 8, minimum 0
                    8'hFF   : readSprData <= {24'd0, s_writeAddressReg};
                    default : readSprData <= 32'd0;
                  endcase
-      8'h31    : readSprData <= s_tracePc;
-      8'h32    : readSprData <= s_traceIr;
-      8'h33    : readSprData <= s_traceData;
-      8'h34    : readSprData <= s_traceTimeStamp;
+      8'h32 |
+      8'h33    : readSprData <= s_tracePc;
+      8'h34 |
+      8'h35    : readSprData <= s_traceIr;
+      8'h36 |
+      8'h37    : readSprData <= s_traceData;
+      8'h38 |
+      8'h39    : readSprData <= s_traceTimeStamp;
       default  : readSprData <= 32'd0;
     endcase
 endmodule

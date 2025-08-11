@@ -19,17 +19,8 @@ module i2cMaster #( parameter CLOCK_FREQUENCY = 12000000,
    *
    */
 
-  function integer clog2;
-    input integer value;
-    begin
-      for (clog2 = 0; value > 0 ; clog2= clog2 + 1)
-      value = value >> 1;
-    end
-  endfunction
-
-
   localparam CLOCK_DIVIDER_VALUE = (CLOCK_FREQUENCY)/(I2C_FREQUENCY*4);
-  localparam NR_OF_BITS = clog2(CLOCK_DIVIDER_VALUE);
+  localparam NR_OF_BITS = $clog2(CLOCK_DIVIDER_VALUE+1);
   localparam [4:0] IDLE = 5'd0;
   localparam [4:0] SENDSTART = 5'd1;
   localparam [4:0] A6 = 5'd2;
