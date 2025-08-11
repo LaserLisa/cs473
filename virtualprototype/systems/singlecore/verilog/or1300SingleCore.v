@@ -26,6 +26,9 @@ module or1300SingleCore ( input wire         clock12MHz,
                                              horizontalSync,
                                              verticalSync,
                                              activePixel,
+                          input wire [4:0]   nButtons, 
+                          input wire [7:0]   nDipSwitch,
+                          input wire [4:0]   nJoystick,
 `ifdef GECKO5Education
                           output wire [4:0]  hdmiRed,
                                              hdmiBlue,
@@ -39,9 +42,6 @@ module or1300SingleCore ( input wire         clock12MHz,
                                              green,
                                              blue,
 
-                          input wire [4:0]   nButtons, 
-                          input wire [7:0]   nDipSwitch,
-                          input wire [4:0]   nJoystick,
 `else
                           output [3:0]       hdmiRed,
                                              hdmiGreen,
@@ -54,9 +54,6 @@ module or1300SingleCore ( input wire         clock12MHz,
 
                           output wire [107:0] leds,
 
-                          input wire [6:1]   nButtons, // nButtons[0] is dedicated for reset
-                          input wire [7:0]   nDipSwitch1,
-                          input wire [7:0]   nDipSwitch2,
 `endif
                           output wire        SCL,
                           inout wire         SDA,
@@ -295,16 +292,9 @@ module or1300SingleCore ( input wire         clock12MHz,
               .dataValidOut(s_switchesDataValid),
               .busErrorOut(s_switchesBusError),
               .addressDataOut(s_switchesAddressData),
-`ifdef GECKO5Education
               .nButtons(nButtons),
               .nDipSwitch(nDipSwitch),
-              .nJoystick(nJoystick)
-`else
-              .nButtons(nButtons),
-              .nDipSwitch1(nDipSwitch1),
-              .nDipSwitch2(nDipSwitch2)
-`endif
-            );
+              .nJoystick(nJoystick));
 
   /*
    *

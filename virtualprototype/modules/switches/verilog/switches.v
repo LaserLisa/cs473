@@ -19,16 +19,9 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
                                      dataValidOut,
                   output reg         busErrorOut,
                   output wire [31:0] addressDataOut,
-`ifdef GECKO5Education
                   input wire [4:0]   nButtons, 
                   input wire [7:0]   nDipSwitch,
-                  input wire [4:0]   nJoystick
-`else
-                  input wire [6:1]   nButtons, // nButtons[0] is dedicated for reset
-                  input wire [7:0]   nDipSwitch1,
-                  input wire [7:0]   nDipSwitch2
-`endif
-                );
+                  input wire [4:0]   nJoystick);
 
   reg s_busDataOutValidReg;
   /*
@@ -146,7 +139,6 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
   genvar n;
   wire [15:0] s_dipswitchState;
   wire [9:0]  s_joystickState;
-`ifdef GECKO5Education
   assign s_dipswitchPressedIrqs[15:8] = 8'd0;
   assign s_dipSwitchReleasedIrqs[15:8] = 8'd0;
   assign s_dipswitchState[15:8] = 8'd0;
@@ -195,52 +187,6 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
                                      .currentState(s_joystickState[n+5]) );
        end
   endgenerate
-`else
-  assign s_joystickPressedIrqs[9:6] = 4'd0;
-  assign s_joystickReleasedIrqs[9:6] = 4'd0;
-  assign s_joystickState[9:6] = 4'd0;
-  generate
-     for (n = 0; n < 8 ; n = n + 1)
-       begin : dipsw
-         debouncerWithIrq debounce1 ( .clock(clock),
-                                     .reset(reset),
-                                     .nButtonIn(nDipSwitch1[n]),
-                                     .scanTick(s_tick),
-                                     .enablePressIrq(s_dipSwitchPressedIrqMaskReg[n]),
-                                     .enableReleaseIrq(s_dipSwitchReleasedIrqMaskReg[n]),
-                                     .resetPressIrq(s_clearDipSwitchPressedIrqs),
-                                     .resetReleaseIrq(s_clearDipSwitchReleasedIrqMask),
-                                     .pressIrq(s_dipswitchPressedIrqs[n]),
-                                     .releasIrq(s_dipSwitchReleasedIrqs[n]),
-                                     .currentState(s_dipswitchState[n]) );
-         debouncerWithIrq debounce2 ( .clock(clock),
-                                     .reset(reset),
-                                     .nButtonIn(nDipSwitch2[n]),
-                                     .scanTick(s_tick),
-                                     .enablePressIrq(s_dipSwitchPressedIrqMaskReg[n+8]),
-                                     .enableReleaseIrq(s_dipSwitchReleasedIrqMaskReg[n+8]),
-                                     .resetPressIrq(s_clearDipSwitchPressedIrqs),
-                                     .resetReleaseIrq(s_clearDipSwitchReleasedIrqMask),
-                                     .pressIrq(s_dipswitchPressedIrqs[n+8]),
-                                     .releasIrq(s_dipSwitchReleasedIrqs[n+8]),
-                                     .currentState(s_dipswitchState[n+8]) );
-       end
-     for (n = 1; n < 7 ; n = n + 1)
-       begin : but
-         debouncerWithIrq debounce ( .clock(clock),
-                                     .reset(reset),
-                                     .nButtonIn(nButtons[n]),
-                                     .scanTick(s_tick),
-                                     .enablePressIrq(s_joystickPressedIrqMaskReg[n-1]),
-                                     .enableReleaseIrq(s_joystickReleasedIrqMaskReg[n-1]),
-                                     .resetPressIrq(s_clearJoystickPressedIrqs),
-                                     .resetReleaseIrq(s_clearJoystickReleasedIrqMask),
-                                     .pressIrq(s_joystickPressedIrqs[n-1]),
-                                     .releasIrq(s_joystickReleasedIrqs[n-1]),
-                                     .currentState(s_joystickState[n-1]) );
-       end
-  endgenerate
-`endif
   
   /*
    *

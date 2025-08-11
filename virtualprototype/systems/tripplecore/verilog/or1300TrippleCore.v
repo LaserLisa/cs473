@@ -26,6 +26,9 @@ module or1300TrippleCore( input wire         clock12MHz,
                                              horizontalSync,
                                              verticalSync,
                                              activePixel,
+                          input wire [4:0]   nButtons, 
+                          input wire [7:0]   nDipSwitch,
+                          input wire [4:0]   nJoystick,
 `ifdef GECKO5Education
                           output wire [4:0]  hdmiRed,
                                              hdmiBlue,
@@ -39,9 +42,6 @@ module or1300TrippleCore( input wire         clock12MHz,
                                              green,
                                              blue,
 
-                          input wire [4:0]   nButtons, 
-                          input wire [7:0]   nDipSwitch,
-                          input wire [4:0]   nJoystick,
 `else
                           output [3:0]       hdmiRed,
                                              hdmiGreen,
@@ -54,9 +54,6 @@ module or1300TrippleCore( input wire         clock12MHz,
 
                           output wire [107:0] leds,
 
-                          input wire [6:1]   nButtons, // nButtons[0] is dedicated for reset
-                          input wire [7:0]   nDipSwitch1,
-                          input wire [7:0]   nDipSwitch2,
 `endif
                           output wire        SCL,
                           inout wire         SDA,
@@ -101,6 +98,7 @@ module or1300TrippleCore( input wire         clock12MHz,
 `ifdef GECKO5Education
   wire s_resetPll = ~nReset;
   wire s_feedbackClock;
+  localparam CLOCKFREQUENCY = 59400000;
 
   EHXPLLL #(
         .PLLRST_ENA("ENABLED"),
@@ -275,7 +273,7 @@ module or1300TrippleCore( input wire         clock12MHz,
   wire s_dipswitchIrq, s_buttonsIrq, s_1KHzTick;
   wire [31:0] s_switchesAddressData;
 
-  switches #( .cpuFrequencyInHz(`ifdef GECKO5Education 42857143 `else 42428571 `endif),
+  switches #( .cpuFrequencyInHz(CLOCKFREQUENCY),
               .baseAddress(32'h50000080)) switchesAndJoy
             ( .clock(s_systemClock),
               .reset(s_reset),
@@ -294,16 +292,9 @@ module or1300TrippleCore( input wire         clock12MHz,
               .dataValidOut(s_switchesDataValid),
               .busErrorOut(s_switchesBusError),
               .addressDataOut(s_switchesAddressData),
-`ifdef GECKO5Education
               .nButtons(nButtons),
               .nDipSwitch(nDipSwitch),
-              .nJoystick(nJoystick)
-`else
-              .nButtons(nButtons),
-              .nDipSwitch1(nDipSwitch1),
-              .nDipSwitch2(nDipSwitch2)
-`endif
-            );
+              .nJoystick(nJoystick));
 
   /*
    *
@@ -412,7 +403,7 @@ module or1300TrippleCore( input wire         clock12MHz,
   wire        s_cpuReset = s_reset | s_sdramInitBusy | ~s_softResetCountReg[4];
   
   sdramController #( .baseAddress(32'h00000000),
-                     .systemClockInHz(`ifdef GECKO5Education 42857143 `else 42428571 `endif)) sdram
+                     .systemClockInHz(CLOCKFREQUENCY)) sdram
                    ( .clock(s_systemClock),
                      .clockX2(s_systemClockX2),
                      .reset(s_reset),
@@ -1044,7 +1035,7 @@ module or1300TrippleCore( input wire         clock12MHz,
    * Here we define a custom instruction that implements a simple I2C interface
    *
    */
-  i2cCustomInstr #(.CLOCK_FREQUENCY(59400000),
+  i2cCustomInstr #(.CLOCK_FREQUENCY(CLOCKFREQUENCY),
                    .I2C_FREQUENCY(400000),
                    .CUSTOM_ID(8'd5)) i2cm
                   (.clock(s_systemClock),
@@ -1155,7 +1146,7 @@ module or1300TrippleCore( input wire         clock12MHz,
   wire [7:0] s_camBurstSize;
   
   camera #(.customInstructionId(8'd7),
-           .clockFrequencyInHz(59400000)) camIf
+           .clockFrequencyInHz(CLOCKFREQUENCY)) camIf
           (.clock(s_systemClock),
            .pclk(camPclk),
            .reset(s_cpuReset),

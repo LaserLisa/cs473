@@ -26,6 +26,9 @@ module or1300DualCore ( input wire         clock12MHz,
                                              horizontalSync,
                                              verticalSync,
                                              activePixel,
+                          input wire [4:0]   nButtons, 
+                          input wire [7:0]   nDipSwitch,
+                          input wire [4:0]   nJoystick,
 `ifdef GECKO5Education
                           output wire [4:0]  hdmiRed,
                                              hdmiBlue,
@@ -39,9 +42,6 @@ module or1300DualCore ( input wire         clock12MHz,
                                              green,
                                              blue,
 
-                          input wire [4:0]   nButtons, 
-                          input wire [7:0]   nDipSwitch,
-                          input wire [4:0]   nJoystick,
 `else
                           output [3:0]       hdmiRed,
                                              hdmiGreen,
@@ -296,16 +296,9 @@ module or1300DualCore ( input wire         clock12MHz,
               .dataValidOut(s_switchesDataValid),
               .busErrorOut(s_switchesBusError),
               .addressDataOut(s_switchesAddressData),
-`ifdef GECKO5Education
               .nButtons(nButtons),
               .nDipSwitch(nDipSwitch),
-              .nJoystick(nJoystick)
-`else
-              .nButtons(nButtons),
-              .nDipSwitch1(nDipSwitch1),
-              .nDipSwitch2(nDipSwitch2)
-`endif
-            );
+              .nJoystick(nJoystick));
 
   /*
    *
