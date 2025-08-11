@@ -155,7 +155,7 @@ module uartBus #( parameter [31:0] baseAddress = 0 )
   wire [4:0] s_rxNrOfEntries;
   wire s_resetRxFifo = reset | (s_weRegsVector[2] & s_selectedDataIn[1]);
   wire s_uartRx = (s_modemControlReg[4] == 1'b1) ? s_TxD : RxD;
-  
+
   assign s_lineStatusReg[0] = ~s_rxFifoEmpty;
   assign s_lineStatusReg[1] = s_lineStatus1Reg;
   assign s_lineStatusReg[5] = s_TxFifoEmpty;
@@ -201,7 +201,6 @@ module uartBus #( parameter [31:0] baseAddress = 0 )
   // here the irq's are defined
   reg s_lineStatusIrq, s_rxAvailableIrq, s_rxAvailableNext, s_txEmptyIrq;
   reg [1:0] s_txEmptyEdgeReg;
-  wire s_clear_error = (s_readStateReg == END && s_busAddressReg[2:0] == 3'b101) ? 1'b1 : 1'b0;
   wire s_txEmptyNext = (reset == 1'b1 || s_TxFifoWe == 1'b1 || (s_readStateReg == END && s_busAddressReg[2:0] == 3'b010 && s_rxAvailableIrq == 1'b0 && s_lineStatusIrq == 1'b0)) ? 1'b0 :
                        (s_txEmptyEdgeReg == 2'b01) ? 1'b1 : s_txEmptyIrq;
   wire [7:0] s_interruptIdentReg;
@@ -210,10 +209,11 @@ module uartBus #( parameter [31:0] baseAddress = 0 )
   assign s_interruptIdentReg[1]   = s_lineStatusIrq | s_txEmptyIrq;
   assign s_interruptIdentReg[0]   = ~(s_lineStatusIrq | s_rxAvailableIrq | s_txEmptyIrq);
   assign irq = s_lineStatusIrq | s_rxAvailableIrq | s_txEmptyIrq;
+  assign s_clearError = (s_readStateReg == END && s_busAddressReg[2:0] == 3'b101) ? 1'b1 : 1'b0;
   
   always @(posedge clock)
     begin
-      s_lineStatusIrq  <= (reset == 1'b1 || s_clear_error == 1'b1) ? 1'b0 :
+      s_lineStatusIrq  <= (reset == 1'b1 || s_clearError == 1'b1) ? 1'b0 :
                           (s_lineStatusIrq | s_lineStatusReg[4] | s_lineStatusReg[3] | s_lineStatusReg[2] | s_lineStatusReg[1]) & s_interruptEnableReg[2];
       s_rxAvailableIrq <= (reset == 1'b1) ? 1'b0 : s_rxAvailableNext & s_interruptEnableReg[0];
       s_txEmptyEdgeReg <= (reset == 1'b1) ? 2'd0 : {s_txEmptyEdgeReg[0], s_lineStatusReg[6]};

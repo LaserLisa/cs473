@@ -5,7 +5,7 @@ module sramLutRam #( parameter nrOfAddressBits = 5,
                      input wire [nrOfAddressBits-1:0] writeAddress,
                      input wire [nrOfAddressBits-1:0] readAddress,
                      input wire [nrOfDataBits-1:0]    writeData,
-                     output wire [nrOfDataBits-2:0]   readData );
+                     output wire [nrOfDataBits-1:0]   readData );
 
   reg [nrOfDataBits-1:0] s_memory [(2**nrOfAddressBits)-1:0];
   
