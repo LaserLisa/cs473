@@ -55,16 +55,8 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
    * Here we define the one kHz tick timer
    *
    */  
-  function integer clog2;
-    input integer value;
-    begin
-      for (clog2 = 0; value > 0 ; clog2= clog2 + 1)
-      value = value >> 1;
-    end
-  endfunction
-
   localparam scanDivideValue = cpuFrequencyInHz/1000;
-  localparam nrOfBits = clog2(scanDivideValue);
+  localparam nrOfBits = $clog2(scanDivideValue + 1);
   
   reg [nrOfBits:0] s_tickCounterReg;
   wire s_tick = (s_tickCounterReg == 0) ? 1'b1 : 1'b0;
@@ -80,10 +72,10 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
    * Here we define the IRQ enable masks
    *
    */
-  reg [15:0]  s_dipSwitchPressedIrqMaskReg, s_dipSwitchReleasedIrqMaskReg;
+  reg [7:0]  s_dipSwitchPressedIrqMaskReg, s_dipSwitchReleasedIrqMaskReg;
   reg [9:0]   s_joystickPressedIrqMaskReg, s_joystickReleasedIrqMaskReg;
   reg [1:0]   s_irqDipReg, s_irqJoyReg;
-  wire [15:0] s_dipswitchPressedIrqs, s_dipSwitchReleasedIrqs;
+  wire [7:0] s_dipswitchPressedIrqs, s_dipSwitchReleasedIrqs;
   wire [9:0]  s_joystickPressedIrqs, s_joystickReleasedIrqs;
   wire s_clearAllIrqMasks = (s_isMyTransaction == 1'b1 && s_dataInValidReg == 1'b1 && s_readNotWriteReg == 1'b1 && s_busAddressReg[4:2] == 3'd7) ? ~s_busErrorOut : 1'b0;
   wire s_weDipSwitchPressedIrqMask = (s_isMyTransaction == 1'b1 && s_dataInValidReg == 1'b1 && s_readNotWriteReg == 1'b0 && s_busAddressReg[4:2] == 3'd1) ? ~s_busErrorOut : 1'b0;
@@ -104,11 +96,11 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
   
   always @(posedge clock)
     begin
-      s_dipSwitchPressedIrqMaskReg  <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 16'd0 : (s_weDipSwitchPressedIrqMask == 1'b1) ? s_dataInReg[15:0] : s_dipSwitchPressedIrqMaskReg;
-      s_dipSwitchReleasedIrqMaskReg <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 16'd0 : (s_weDipSwitchReleasedIrqMask == 1'b1) ? s_dataInReg[15:0] : s_dipSwitchReleasedIrqMaskReg;
+      s_dipSwitchPressedIrqMaskReg  <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 8'd0 : (s_weDipSwitchPressedIrqMask == 1'b1) ? s_dataInReg[7:0] : s_dipSwitchPressedIrqMaskReg;
+      s_dipSwitchReleasedIrqMaskReg <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 8'd0 : (s_weDipSwitchReleasedIrqMask == 1'b1) ? s_dataInReg[7:0] : s_dipSwitchReleasedIrqMaskReg;
       s_joystickPressedIrqMaskReg   <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 10'd0 : (s_weJoystickPressedIrqMask == 1'b1) ? s_dataInReg[9:0] : s_joystickPressedIrqMaskReg;
       s_joystickReleasedIrqMaskReg  <= (reset == 1'b1 || s_clearAllIrqMasks == 1'b1) ? 10'd0 : (s_weJoystickReleasedIrqMask == 1'b1) ? s_dataInReg[9:0] : s_joystickReleasedIrqMaskReg;
-      s_irqDipReg[0]                <= (s_dipswitchPressedIrqs != 16'd0 || s_dipSwitchReleasedIrqs != 16'd0) ? 1'b1 : 1'b0;
+      s_irqDipReg[0]                <= (s_dipswitchPressedIrqs != 8'd0 || s_dipSwitchReleasedIrqs != 8'd0) ? 1'b1 : 1'b0;
       s_irqDipReg[1]                <= (reset == 1'b1) ? 1'b0 : s_irqDipReg[0];
       s_irqJoyReg[0]                <= (s_joystickPressedIrqs != 10'd0 || s_joystickReleasedIrqs != 10'd0) ? 1'b1 : 1'b0;
       s_irqJoyReg[1]                <= (reset == 1'b1) ? 1'b0 : s_irqJoyReg[0];
@@ -137,11 +129,8 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
    *
    */
   genvar n;
-  wire [15:0] s_dipswitchState;
+  wire [7:0] s_dipswitchState;
   wire [9:0]  s_joystickState;
-  assign s_dipswitchPressedIrqs[15:8] = 8'd0;
-  assign s_dipSwitchReleasedIrqs[15:8] = 8'd0;
-  assign s_dipswitchState[15:8] = 8'd0;
   
   generate
      for (n = 0; n < 8 ; n = n + 1)
@@ -203,9 +192,9 @@ module switches #( parameter        cpuFrequencyInHz = 4285800,
 
   always @*
     case (s_busAddressReg[4:2])
-      3'd0    : s_busDataOutNext <= {16'd0, s_dipswitchState};
-      3'd1    : s_busDataOutNext <= {16'd0, s_dipswitchPressedIrqs};
-      3'd2    : s_busDataOutNext <= {16'd0, s_dipSwitchReleasedIrqs};
+      3'd0    : s_busDataOutNext <= {24'd0, s_dipswitchState};
+      3'd1    : s_busDataOutNext <= {24'd0, s_dipswitchPressedIrqs};
+      3'd2    : s_busDataOutNext <= {24'd0, s_dipSwitchReleasedIrqs};
       3'd3    : s_busDataOutNext <= {22'd0, s_joystickState};
       3'd4    : s_busDataOutNext <= {22'd0, s_joystickPressedIrqs};
       3'd5    : s_busDataOutNext <= {22'd0, s_joystickReleasedIrqs};
