@@ -48,26 +48,30 @@ module spm4k #(parameter [31:0] slaveBaseAddress = 0,
   assign s_writeData[23:16] = (spmByteEnables[2] == 1'b1) ? dataToSpm[23:16] : s_lookupData[23:16];
   assign s_writeData[31:24] = (spmByteEnables[3] == 1'b1) ? dataToSpm[31:24] : s_lookupData[31:24];
 
-  sram1024X16Dp ramA ( .clockA(s_clockNot),
-                       .writeEnableA(s_dmaWe),
-                       .addressA(s_lookupAddress),
-                       .dataInA(s_dmaDataOut[15:0]),
-                       .dataOutA(s_lookupData[15:0]),
-                       .clockB(clock),
-                       .writeEnableB(s_weData),
-                       .addressB(spmAddress[9:0]),
-                       .dataInB(s_writeData[15:0]),
-                       .dataOutB(s_dataToCore[15:0]));
-  sram1024X16Dp ramB ( .clockA(s_clockNot),
-                       .writeEnableA(s_dmaWe),
-                       .addressA(s_lookupAddress),
-                       .dataInA(s_dmaDataOut[31:16]),
-                       .dataOutA(s_lookupData[31:16]),
-                       .clockB(clock),
-                       .writeEnableB(s_weData),
-                       .addressB(spmAddress[9:0]),
-                       .dataInB(s_writeData[31:16]),
-                       .dataOutB(s_dataToCore[31:16]));
+  sramDp #(.nrOfAddressBits(10),
+           .nrOfDataBits(16)) ramA
+          ( .clockA(s_clockNot),
+            .writeEnableA(s_dmaWe),
+            .addressA(s_lookupAddress),
+            .dataInA(s_dmaDataOut[15:0]),
+            .dataOutA(s_lookupData[15:0]),
+            .clockB(clock),
+            .writeEnableB(s_weData),
+            .addressB(spmAddress[9:0]),
+            .dataInB(s_writeData[15:0]),
+            .dataOutB(s_dataToCore[15:0]));
+  sramDp #(.nrOfAddressBits(10),
+           .nrOfDataBits(16)) ramB
+          (.clockA(s_clockNot),
+           .writeEnableA(s_dmaWe),
+           .addressA(s_lookupAddress),
+           .dataInA(s_dmaDataOut[31:16]),
+           .dataOutA(s_lookupData[31:16]),
+           .clockB(clock),
+           .writeEnableB(s_weData),
+           .addressB(spmAddress[9:0]),
+           .dataInB(s_writeData[31:16]),
+           .dataOutB(s_dataToCore[31:16]));
 
   always @(posedge clock)
     begin

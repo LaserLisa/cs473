@@ -34,8 +34,6 @@ read -sv ../../../modules/uart/verilog/uartTx.v
 read -sv ../../../modules/uart/verilog/uartRxFifo.v
 read -sv ../../../modules/uart/verilog/uartTxFifo.v
 read -sv ../../../modules/uart/verilog/uartBus.v
-read -sv ../../../modules/spm/verilog/sram2048x8Dp.v
-read -sv ../../../modules/spm/verilog/sram_1024x16_dp.v
 read -sv ../../../modules/spm/verilog/spmDma.v
 read -sv ../../../modules/spm/verilog/spm2k.v
 read -sv ../../../modules/spm/verilog/spm4k.v

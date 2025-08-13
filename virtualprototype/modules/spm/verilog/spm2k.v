@@ -48,16 +48,18 @@ module spm2k #(parameter [31:0] slaveBaseAddress = 0,
   assign s_writeData[23:16] = (spmByteEnables[2] == 1'b1) ? dataToSpm[23:16] : s_lookupData[23:16];
   assign s_writeData[31:24] = (spmByteEnables[3] == 1'b1) ? dataToSpm[31:24] : s_lookupData[31:24];
 
-  sram512X32Dp ram ( .clockA(s_clockNot),
-                     .writeEnableA(s_dmaWe),
-                     .addressA(s_lookupAddress),
-                     .dataInA(s_dmaDataOut),
-                     .dataOutA(s_lookupData),
-                     .clockB(clock),
-                     .writeEnableB(s_weData),
-                     .addressB(spmAddress[8:0]),
-                     .dataInB(s_writeData),
-                     .dataOutB(s_dataToCore));
+  sramDp #(.nrOfAddressBits(9),
+           .nrOfDataBits(32)) ram
+          ( .clockA(s_clockNot),
+            .writeEnableA(s_dmaWe),
+            .addressA(s_lookupAddress),
+            .dataInA(s_dmaDataOut),
+            .dataOutA(s_lookupData),
+            .clockB(clock),
+            .writeEnableB(s_weData),
+            .addressB(spmAddress[8:0]),
+            .dataInB(s_writeData),
+            .dataOutB(s_dataToCore));
 
   always @(posedge clock)
     begin
