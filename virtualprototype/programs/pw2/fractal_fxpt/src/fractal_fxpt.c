@@ -7,19 +7,17 @@
 //! \param  cy    y-coordinate
 //! \param  n_max maximum number of iterations
 //! \return       number of performed iterations at coordinate (cx, cy)
-uint16_t calc_mandelbrot_point_soft(q4_28_t cx, q4_28_t cy, uint16_t n_max) {
-  q4_28_t x = cx;
-  q4_28_t y = cy;
+uint16_t calc_mandelbrot_point_soft(q7_25_t cx, q7_25_t cy, uint16_t n_max) {
+  q7_25_t x = cx;
+    q7_25_t y = cy;
   uint16_t n = 0;
-  q4_28_t xx, yy, two_xy;
-  q4_28_t escape_cond = int_to_q4_28(4);
+  q7_25_t xx, yy, two_xy;
+  q7_25_t escape_cond = int_to_q7_25(4);
   do {
-    xx = q4_28_mul(x, x);
-    yy = q4_28_mul(y, y);
-    two_xy = q4_28_mul(x, y) << 1;
+    xx = q7_25_mul(x, x);
+    yy = q7_25_mul(y, y);
+      two_xy = q7_25_mul(q7_25_mul(x, y), int_to_q7_25(2));
 
-    // printf("x = 0x%08X\n", x);
-    // printf("y = 0x%08X\n", y);
     x = xx - yy + cx;
     y = two_xy + cy;
     ++n;
@@ -104,32 +102,17 @@ rgb565 iter_to_colour1(uint16_t iter, uint16_t n_max) {
 //! \param  n_max  maximum number of iterations
 void draw_fractal(rgb565 *fbuf, int width, int height,
                   calc_frac_point_p cfp_p, iter_to_colour_p i2c_p,
-                  q4_28_t cx_0, q4_28_t cy_0, q4_28_t delta, uint16_t n_max) {
+                  q7_25_t cx_0, q7_25_t cy_0, q7_25_t delta, uint16_t n_max) {
   rgb565 *pixel = fbuf;
-  q4_28_t cy = cy_0;
+  q7_25_t cy = cy_0;
   for (int k = 0; k < height; ++k) {
-    q4_28_t cx = cx_0;
+    q7_25_t cx = cx_0;
     for(int i = 0; i < width; ++i) {
       uint16_t n_iter = (*cfp_p)(cx, cy, n_max);
       rgb565 colour = (*i2c_p)(n_iter, n_max);
       *(pixel++) = colour;
       cx += delta;
-      // printf("x = 0x%08X\n", cx);
-      // printf("y = 0x%08X\n", cy);
-      // printf("iterations = 0x%d\n", n_iter);
     }
     cy += delta;
   }
 }
-
-// static inline q4_28_t q4_28_mul(q4_28_t a, q4_28_t b) {
-//     return (q4_28_t)(((int64_t)a * b) >> 28);
-// }
-
-// static inline q4_28_t int_to_q4_28(int x) {
-//     return x << 28;
-// }
-
-// static inline q4_28_t float_to_q4_28(float x) {
-//     return (q4_28_t)(x * (1 << 28));
-// }

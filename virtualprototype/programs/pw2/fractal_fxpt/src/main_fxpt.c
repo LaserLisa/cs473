@@ -2,6 +2,7 @@
 #include "swap.h"
 #include "vga.h"
 #include "cache.h"
+#include "perf.h"
 #include <stddef.h>
 #include <stdio.h>
 
@@ -11,27 +12,19 @@ const int SCREEN_HEIGHT = 512;  //!< screen height
 
 // Constants describing the initial view port on the fractal function
 const float FRAC_WIDTH = 3.0; //!< default fractal width (3.0 in Q4.28)
-const q4_28_t CX_0 = 0xE0000000;      //!< default start x-coordinate (-2.0 in Q4.28)
-const q4_28_t CY_0 = 0xE8000000;      //!< default start y-coordinate (-1.5 in Q4.28)
+const q7_25_t CX_0 = -2 << Q7_25_SHIFT;      //!< default start x-coordinate (-2.0 in Q4.28)
+const q7_25_t CY_0 = -3 << (Q7_25_SHIFT-1);      //!< default start y-coordinate (-1.5 in Q4.28)
 const uint16_t N_MAX = 64;    //!< maximum number of iterations
 
-int main() {
-   // everything here seems to work
-   // printf("FRAC_WIDTH = 0x%08X\n", FRAC_WIDTH);
-   // printf("CX_0 = 0x%08X\n", CX_0);
-   // printf("CY_0 = 0x%08X\n", CY_0);
-   // printf("int to q428 (5): 0x%08X\n", float_to_q4_28(-2.0));
-   // printf("multiplication (1.6879*2.6502) 0x%08X\n", q4_28_mul(float_to_q4_28(1.6879), float_to_q4_28(2.6502)));
-   
+int main() {   
    volatile unsigned int *vga = (unsigned int *) 0x50000020;
    volatile unsigned int reg, hi;
    rgb565 frameBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
-   q4_28_t delta = float_to_q4_28((FRAC_WIDTH / SCREEN_WIDTH));
+   q7_25_t delta = float_to_q7_25((FRAC_WIDTH / SCREEN_WIDTH));
    int i;
    vga_clear();
    printf("Starting drawing a fractal\n");
-   // uint16_t n = calc_mandelbrot_point_soft(float_to_q4_28(0.2), float_to_q4_28(0.7), N_MAX);
-   // printf("Number of iterations %d\n", n);
+
 #ifdef __OR1300__   
    /* enable the caches */
    icache_write_cfg( CACHE_DIRECT_MAPPED | CACHE_SIZE_8K | CACHE_REPLACE_FIFO );
@@ -47,7 +40,14 @@ int main() {
    /* Clear screen */
    for (i = 0 ; i < SCREEN_WIDTH*SCREEN_HEIGHT ; i++) frameBuffer[i]=0;
 
+   perf_init();
+
+   perf_set_mask(PERF_COUNTER_RUNTIME, PERF_EXECUTED_INSTRUCTIONS_MASK);  // optional, depending on what you want
+   perf_start();
    draw_fractal(frameBuffer,SCREEN_WIDTH,SCREEN_HEIGHT,&calc_mandelbrot_point_soft, &iter_to_colour,CX_0,CY_0,delta,N_MAX);
+   perf_stop();
+   perf_print_time(PERF_COUNTER_RUNTIME, "End time: ");
+   
 #ifdef __OR1300__
    dcache_flush();
 #endif
