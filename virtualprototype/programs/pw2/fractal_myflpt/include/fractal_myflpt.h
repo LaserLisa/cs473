@@ -36,14 +36,15 @@ static inline my_float my_float_mul(my_float a, my_float b) {
     uint32_t exp_b = b & _EXPONENT_MASK;
     uint32_t mant_a = (a & _MANTISSE_MASK) | (1 << MANTISSE);
     uint32_t mant_b = (b & _MANTISSE_MASK) | (1 << MANTISSE);
+    if (a == 0 || b == 0) return 0;
 
     // add exponents
-    uint32_t res_exp = (uint32_t)((exp_a - (EXCESS << MANTISSE)) + (exp_b - (EXCESS << MANTISSE)) + (EXCESS << MANTISSE));
+    uint32_t res_exp = (uint32_t)(exp_a + exp_b - (EXCESS << MANTISSE));
     if (res_exp > (0xFF << MANTISSE)) res_exp = (0xFF << MANTISSE);       
 
     uint64_t res_mat = (uint64_t)mant_a * (uint64_t)mant_b;
     // print msb of res_mat and lsb
-    if (res_mat & ((uint64_t)1 << 47)) { // 2* 23 +1 bits
+    if (res_mat & ((uint64_t)1 << 47)) { // 2* MANTISSE + 1 bits
         res_mat >>= 1;
         res_exp = res_exp + (1 << MANTISSE);
     }
@@ -52,7 +53,7 @@ static inline my_float my_float_mul(my_float a, my_float b) {
 
 
     //check if need to witch sign bit
-    uint32_t sign_bit = (a & _SIGN_MASK) ^ (b & _SIGN_MASK);
+    uint32_t sign_bit = sign_a ^ sign_b;
 
     my_float result = new_mat | res_exp | sign_bit;
     return result;
@@ -64,7 +65,7 @@ static inline my_float my_float_mul(my_float a, my_float b) {
 //! \param b Second operand
 //! \return Result of addition
 static inline my_float my_float_add(my_float a, my_float b) {
-    // Step 1: Extract exponent and fraction bits
+    // Extract sign, exponent and fraction bits
     uint32_t sign_a = a & _SIGN_MASK;
     uint32_t sign_b = b & _SIGN_MASK;
     int32_t exp_a = ((a & _EXPONENT_MASK) >> MANTISSE)-EXCESS;
@@ -133,8 +134,6 @@ static inline my_float my_float_add(my_float a, my_float b) {
         res_mant <<= 1;
         res_exp--;
     }
-    // printf("after normalize res_mant = 0x%08X\n", res_mant);
-    // printf("after normalize res_exp = 0x%08X\n", res_exp);
 
     // truncate to 23 bits
     uint32_t final_mant = res_mant & _MANTISSE_MASK;  // Remove implicit bit

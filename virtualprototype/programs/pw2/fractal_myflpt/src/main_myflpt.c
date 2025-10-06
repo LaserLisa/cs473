@@ -13,8 +13,9 @@ const int SCREEN_HEIGHT = 512;  //!< screen height
 
 // Constants describing the initial view port on the fractal function
 const float FRAC_WIDTH = 3.0; //!< default fractal width (3.0 in Q4.28)
-const my_float CX_0 = 0xFD800000;      //!< default start x-coordinate (-2.0 in Q4.28)
-const my_float CY_0 = 0xFD400000;      //!< default start y-coordinate (-1.5 in Q4.28)
+// const my_float CX_0 = 0xFD800000;      //!< default start x-coordinate (-2.0 in Q4.28)
+// const my_float CY_0 = 0xFD400000;      //!< default start y-coordinate (-1.5 in Q4.28)
+
 const uint16_t N_MAX = 64;    //!< maximum number of iterations
 
 // Helper function to print my_float as hex
@@ -28,6 +29,8 @@ int main() {
    rgb565 frameBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
    float delta = FRAC_WIDTH / SCREEN_WIDTH;
    my_float mdelta = float_to_my_float(delta);
+   my_float CX_0 = float_to_my_float(-2.0);
+   my_float CY_0 = float_to_my_float(-1.5);
    int i;
    vga_clear();
    printf("Starting drawing a fractal\n");
@@ -63,8 +66,8 @@ int main() {
    
    // Test my_float implementation
 
-   // float a = 0.009765625;
-   // float b = FRAC_WIDTH / SCREEN_WIDTH;
+   // float a = 0;
+   // float b = 2.5;
 
    // FloatAs32 fa_float;
    // fa_float.f = a;
@@ -108,7 +111,7 @@ int main() {
    
 
    // int a_int = 2;
-   // int b_int = -3;
+   // int b_int = -0;
    // my_float ma_int = int_to_my_float(a_int);
    // my_float mb_int = int_to_my_float(b_int);
    // float fb_int = my_float_to_float(mb_int);
@@ -131,16 +134,6 @@ int main() {
    // printf("my_float a * b: 0x%08X\n", mprod_int);
 
 
-
-
-   // print_my_float_hex("my_float a + b", msum);
-   // print_my_float_hex("my_float a * b", mprod);
-
-   // float sum = my_float_to_float(msum);
-   // float prod = my_float_to_float(mprod);
-
-   // printf("a + b as rounded int: %d\n", (int)sum);
-   // printf("a * b as rounded int: %d\n", (int)prod);
 #ifdef __OR1300__
    dcache_flush();
 #endif

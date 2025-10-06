@@ -67,13 +67,14 @@ my_float int_to_my_float(int x) {
 //! \param x Float to convert
 //! \return Result of conversion
 my_float float_to_my_float(float x) {
+  if (x == 0) return 0;
   FloatAs32 f;
   f.f = x;
 
   uint32_t sign = f.i & _SIGN_MASK;
   uint32_t exponent = (f.i & _EXPONENT_MASK);
   uint32_t mantissa = f.i & _MANTISSE_MASK;
-  exponent = exponent + (123 << MANTISSE); // add 123 to exponent
+  exponent = exponent + ((EXCESS-127) << MANTISSE); // add 123 (250-127) to exponent
   my_float result = sign | exponent | mantissa;
   return result;
 }
@@ -82,10 +83,11 @@ my_float float_to_my_float(float x) {
 //! \param x my_float to convert
 //! \return Result of conversion
 float my_float_to_float(my_float x) {
+  if (x == 0) return 0;
   uint32_t sign = x & _SIGN_MASK;
   uint32_t exponent = (x & _EXPONENT_MASK);
   uint32_t mantissa = x & _MANTISSE_MASK;
-  exponent = exponent - (123 << MANTISSE); // add 123 to exponent
+  exponent = exponent - ((EXCESS-127) << MANTISSE); // add 123 (250-127) to exponent
   uint32_t result = sign | exponent | mantissa;
   FloatAs32 f;
   f.i = result;
