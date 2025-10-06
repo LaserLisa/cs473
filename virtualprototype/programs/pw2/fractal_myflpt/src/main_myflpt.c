@@ -2,6 +2,7 @@
 #include "swap.h"
 #include "vga.h"
 #include "cache.h"
+#include "perf.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -45,11 +46,25 @@ int main() {
    /* Clear screen */
    for (i = 0 ; i < SCREEN_WIDTH*SCREEN_HEIGHT ; i++) frameBuffer[i]=0;
 
+   // test mandelbrot
+   // float cx_float = 0.009765625;
+   // float cy_float = -1.5;
+   // my_float cx = float_to_my_float(cx_float);
+   // my_float cy = float_to_my_float(cy_float);
+   // uint16_t n = calc_mandelbrot_point_soft(cx, cy, N_MAX);
+   // printf("n = %d\n", n);
+   perf_init();
+
+   perf_set_mask(PERF_COUNTER_RUNTIME, PERF_EXECUTED_INSTRUCTIONS_MASK);
+   perf_start();
    draw_fractal(frameBuffer,SCREEN_WIDTH,SCREEN_HEIGHT,&calc_mandelbrot_point_soft, &iter_to_colour,CX_0,CY_0,mdelta,N_MAX);
+   perf_stop();
+   perf_print_time(PERF_COUNTER_RUNTIME, "Execution time:");
+   
    // Test my_float implementation
 
-   // float a = -2.0;
-   // float b = -1.5;
+   // float a = 0.009765625;
+   // float b = FRAC_WIDTH / SCREEN_WIDTH;
 
    // FloatAs32 fa_float;
    // fa_float.f = a;

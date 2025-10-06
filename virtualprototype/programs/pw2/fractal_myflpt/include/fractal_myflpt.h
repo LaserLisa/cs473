@@ -17,9 +17,18 @@ typedef union FloatAs32 {
     volatile uint32_t i; // "Overlays" other fields in union
 } FloatAs32;
 
-typedef int32_t my_float; // sign|exponent|mantissa
+typedef uint32_t my_float; // sign|exponent|mantissa
 
-//! Function to multiply two floats using own type def
+//! \brief Function to calculate binary logarithm for unsigned integer argument x
+//! \note  For x equal 0, the function returns -1.
+//! \param x Argument
+//! \return Result of calculation
+int ilog2(unsigned x);
+
+//! \brief Function to multiply two floats using own type def
+//! \param a First operand
+//! \param b Second operand
+//! \return Result of multiplication
 static inline my_float my_float_mul(my_float a, my_float b) {
     uint32_t sign_a = a & _SIGN_MASK;
     uint32_t sign_b = b & _SIGN_MASK;
@@ -50,9 +59,10 @@ static inline my_float my_float_mul(my_float a, my_float b) {
 
 }
 
-int ilog2(unsigned x);
-
-//! Function to add two floats using own type def
+//! \brief Function to add two floats using own type def
+//! \param a First operand
+//! \param b Second operand
+//! \return Result of addition
 static inline my_float my_float_add(my_float a, my_float b) {
     // Step 1: Extract exponent and fraction bits
     uint32_t sign_a = a & _SIGN_MASK;
@@ -69,6 +79,9 @@ static inline my_float my_float_add(my_float a, my_float b) {
     // append 1 to mantissa
     uint32_t mant_a = frac_a | (1 << MANTISSE);
     uint32_t mant_b = frac_b | (1 << MANTISSE);
+
+    // printf("mant_a = 0x%08X\n", mant_a);
+    // printf("mant_b = 0x%08X\n", mant_b);
     
     // compare exponents and shift smaller mantissa
     int32_t res_exp;
@@ -83,11 +96,12 @@ static inline my_float my_float_add(my_float a, my_float b) {
         uint32_t shift = exp_b - exp_a;
         mant_a >>= shift;
     }
-    
+    // printf("res_exp = 0x%08X\n", res_exp);
     // add mantissas
     uint32_t res_mant;
     uint32_t res_sign;
-    
+    // printf("sign_a = 0x%08X\n", sign_a);
+    // printf("sign_b = 0x%08X\n", sign_b);
     if (sign_a == sign_b) {
         // Same sign: add mantissas
         res_mant = mant_a + mant_b;
@@ -102,11 +116,12 @@ static inline my_float my_float_add(my_float a, my_float b) {
             res_sign = sign_b;
         }
     }
-
+    // printf("res_mant = 0x%08X\n", res_mant);
+    // printf("res_sign = 0x%08X\n", res_sign);
     if (res_mant == 0) {
         return 0;
     }
-    
+
     // normalize mantissa and adjust exponent
     while (res_mant > (1 << (MANTISSE+1))) {  // More than 24 bits
         res_mant >>= 1;
@@ -114,12 +129,13 @@ static inline my_float my_float_add(my_float a, my_float b) {
     }
 
     
-    while ((res_mant & (1 << MANTISSE)) == 0) {  // Less than 24 bits
+    while ((res_mant & (1 << MANTISSE)) == 0 && res_mant != 0) {  // Less than 24 bits
         res_mant <<= 1;
         res_exp--;
     }
+    // printf("after normalize res_mant = 0x%08X\n", res_mant);
+    // printf("after normalize res_exp = 0x%08X\n", res_exp);
 
-    
     // truncate to 23 bits
     uint32_t final_mant = res_mant & _MANTISSE_MASK;  // Remove implicit bit
 
@@ -128,86 +144,38 @@ static inline my_float my_float_add(my_float a, my_float b) {
     return result;
 }
 
-//! Function to negate a float using own type def
+//! \brief Function to negate a float using own type def
+//! \param a Operand
+//! \return Result of negation
 static inline my_float my_float_neg(my_float a) {
     my_float result = a ^ _SIGN_MASK;
     return result;
 }
 
-//! Function to substract two floats using own type def
+//! \brief Function to substract two floats using own type def
+//! \param a First operand
+//! \param b Second operand
+//! \return Result of subtraction
 static inline my_float my_float_sub(my_float a, my_float b) {
     my_float result = my_float_add(a, my_float_neg(b));
     return result;
 }
 
 
-//! Function to convert integer to my_float
-static inline my_float int_to_my_float(int x) {
+//! \brief Function to convert integer to my_float
+//! \param x Integer to convert
+//! \return Result of conversion
+my_float int_to_my_float(int x);
 
-    if (x == 0) return 0;
-    // check if x is out of range
-    if (x > 63) x = 63;
-    if (x < -63) x = -63;
-    uint32_t sign;
+//! \brief Function to convert float to my_float
+//! \param x Float to convert
+//! \return Result of conversion
+my_float float_to_my_float(float x);
 
-    if (x < 0 ) {
-        x = -x;
-        sign = _SIGN_MASK;
-    }
-    else {
-        sign = 0;
-    }
-
-    // Find the highest bit set. Add the bias to its index, that's gonna be your exponent.
-    int highest_bit = ilog2((uint32_t)x);
-    uint32_t exponent = (highest_bit + EXCESS) << MANTISSE;
-
-
-    // Clear the highest bit set, what remains is the mantissa.
-    uint32_t mantissa = (x ^ (1 << highest_bit)) << (MANTISSE-highest_bit);
-
-
-    my_float result = sign | exponent | mantissa;
-
-    return result;
-}
-
-//! Function to convert float to my_float
-static inline my_float float_to_my_float(float x) {
-    FloatAs32 f;
-    f.f = x;
-
-    uint32_t sign = f.i & _SIGN_MASK;
-    uint32_t exponent = (f.i & _EXPONENT_MASK);
-    uint32_t mantissa = f.i & _MANTISSE_MASK;
-    exponent = exponent + (123 << MANTISSE); // add 123 to exponent
-    my_float result = sign | exponent | mantissa;
-    return result;
-}
-
-//! Function to convert my_float to float
-static inline float my_float_to_float(my_float x) {
-    uint32_t sign = x & _SIGN_MASK;
-    uint32_t exponent = (x & _EXPONENT_MASK);
-    uint32_t mantissa = x & _MANTISSE_MASK;
-    exponent = exponent - (123 << MANTISSE); // add 123 to exponent
-    uint32_t result = sign | exponent | mantissa;
-    FloatAs32 f;
-    f.i = result;
-    float result_float = f.f;
-    return result_float;
-}
-
-//! Function compare two floats and return 1 if a < b
-static inline int my_float_less(my_float a, my_float b) {
-    int32_t exp_a = ((a & _EXPONENT_MASK) >> MANTISSE)-EXCESS;
-    int32_t exp_b = ((b & _EXPONENT_MASK) >> MANTISSE)-EXCESS;
-    uint32_t frac_a = a & _MANTISSE_MASK;
-    uint32_t frac_b = b & _MANTISSE_MASK;
-    if (exp_a < exp_b) return 1;
-    if (exp_a > exp_b) return 0;
-    return frac_a < frac_b;
-}
+//! \brief Function to convert my_float to float
+//! \param x my_float to convert
+//! \return Result of conversion
+float my_float_to_float(my_float x);
 
 
 //! Colour type (5-bit red, 6-bit green, 5-bit blue)
