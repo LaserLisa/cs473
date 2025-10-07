@@ -2,6 +2,7 @@
 #include "swap.h"
 #include "vga.h"
 #include "cache.h"
+#include "perf.h"
 #include <stddef.h>
 #include <stdio.h>
 
@@ -38,7 +39,13 @@ int main() {
    /* Clear screen */
    for (i = 0 ; i < SCREEN_WIDTH*SCREEN_HEIGHT ; i++) frameBuffer[i]=0;
 
+   perf_init();
+   perf_set_mask(PERF_COUNTER_RUNTIME, PERF_EXECUTED_INSTRUCTIONS_MASK);
+   perf_start();
    draw_fractal(frameBuffer,SCREEN_WIDTH,SCREEN_HEIGHT,&calc_mandelbrot_point_soft, &iter_to_colour,CX_0,CY_0,delta,N_MAX);
+   perf_stop();
+   perf_print_time(PERF_COUNTER_RUNTIME, "Execution time:");
+   
 #ifdef __OR1300__
    dcache_flush();
 #endif
