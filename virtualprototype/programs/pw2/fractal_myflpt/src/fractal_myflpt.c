@@ -13,11 +13,6 @@ uint16_t calc_mandelbrot_point_soft(my_float cx, my_float cy, uint16_t n_max) {
   my_float xx, yy, two_xy;
   my_float escape_cond = int_to_my_float(4);
   do {
-    // FloatAs32 fx;
-    // fx.f = my_float_to_float(x);
-    // FloatAs32 fy;
-    // fy.f = my_float_to_float(y);
-    // printf("iteration %d: x = 0x%08X, y = 0x%08X\n", n, fx.i, fy.i);
     xx = my_float_mul(x, x);
     yy = my_float_mul(y, y);
     two_xy = my_float_mul(my_float_mul(x, y), int_to_my_float(2));
@@ -26,7 +21,7 @@ uint16_t calc_mandelbrot_point_soft(my_float cx, my_float cy, uint16_t n_max) {
     y = my_float_add(two_xy, cy);
     ++n;
   } while (my_float_add(xx, yy) < escape_cond && (n < n_max));
-  // printf("while loop ended\n");
+
   return n;
 }
 
@@ -187,10 +182,8 @@ void draw_fractal(rgb565 *fbuf, int width, int height,
       *(pixel++) = colour;
       cx = my_float_add(cx, delta);
       fcx.f = my_float_to_float(cx);
-      // printf("X iteration %d: x : 0x%08X  y : 0x%08X\n ", i, fcx.i, fcy.i);
     }
     cy = my_float_add(cy, delta);
     fcy.f = my_float_to_float(cy);
-    // printf("iteration %d: y : 0x%08X\n ", k, fcy.i);
   }
 }

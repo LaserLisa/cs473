@@ -12,9 +12,10 @@
 #define _EXPONENT_MASK  0x7F800000
 #define _MANTISSE_MASK  0x007FFFFF
 
+//! \brief Union to convert float to uint32_t to print in hex
 typedef union FloatAs32 {
     volatile float f;
-    volatile uint32_t i; // "Overlays" other fields in union
+    volatile uint32_t i; 
 } FloatAs32;
 
 typedef uint32_t my_float; // sign|exponent|mantissa
@@ -81,8 +82,6 @@ static inline my_float my_float_add(my_float a, my_float b) {
     uint32_t mant_a = frac_a | (1 << MANTISSE);
     uint32_t mant_b = frac_b | (1 << MANTISSE);
 
-    // printf("mant_a = 0x%08X\n", mant_a);
-    // printf("mant_b = 0x%08X\n", mant_b);
     
     // compare exponents and shift smaller mantissa
     int32_t res_exp;
@@ -97,12 +96,11 @@ static inline my_float my_float_add(my_float a, my_float b) {
         uint32_t shift = exp_b - exp_a;
         mant_a >>= shift;
     }
-    // printf("res_exp = 0x%08X\n", res_exp);
+
     // add mantissas
     uint32_t res_mant;
     uint32_t res_sign;
-    // printf("sign_a = 0x%08X\n", sign_a);
-    // printf("sign_b = 0x%08X\n", sign_b);
+
     if (sign_a == sign_b) {
         // Same sign: add mantissas
         res_mant = mant_a + mant_b;
@@ -117,8 +115,7 @@ static inline my_float my_float_add(my_float a, my_float b) {
             res_sign = sign_b;
         }
     }
-    // printf("res_mant = 0x%08X\n", res_mant);
-    // printf("res_sign = 0x%08X\n", res_sign);
+
     if (res_mant == 0) {
         return 0;
     }
